@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildPortfolioAnalysisPrompt } from '@/lib/ai-analysis-portfolio'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
+import { fetchWithTimeout } from '@/lib/fetch-utils'
 import sharp from 'sharp'
+
+export const maxDuration = 60 // Vercel: max 60s for Hobby plan
 
 const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
@@ -89,25 +92,28 @@ export async function POST(request: NextRequest) {
     }))
     userContent.push({ type: 'text', text: userText })
 
-    // Call Doubao via Volcano Ark
-    // temperature=0 for maximum determinism; seed=42 for reproducibility
-    const response = await fetch(`${ARK_BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${ARK_API_KEY}`,
+    // Call Doubao via Volcano Ark with 40s timeout
+    const response = await fetchWithTimeout(
+      `${ARK_BASE_URL}/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${ARK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: ARK_MODEL,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: userContent },
+          ],
+          temperature: 0,
+          seed: 42,
+          max_tokens: 4096,
+        }),
       },
-      body: JSON.stringify({
-        model: ARK_MODEL,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: userContent },
-        ],
-        temperature: 0,
-        seed: 42,
-        max_tokens: 4096,
-      }),
-    })
+      40000 // 40s timeout
+    )
 
     if (!response.ok) {
       const errText = await response.text()
