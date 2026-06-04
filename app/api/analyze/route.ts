@@ -106,7 +106,9 @@ export async function POST(request: NextRequest) {
           ],
           temperature: 0,
           seed: 42,
-          max_tokens: 2048,
+          thinking: { type: 'disabled' },
+          response_format: { type: 'json_object' },
+          max_completion_tokens: 1800,
         }),
       },
       AI_TIMEOUT_MS
