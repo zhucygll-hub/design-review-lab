@@ -16,12 +16,13 @@ export async function fetchWithTimeout(
       signal: controller.signal,
     })
     return response
-  } catch (err: any) {
-    if (err?.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new Error(`请求超时 (${timeoutMs / 1000}秒)`)
     }
     // Network error (DNS, connection refused, etc.)
-    throw new Error(`网络请求失败: ${err?.message || '未知网络错误'}`)
+    const message = err instanceof Error ? err.message : '未知网络错误'
+    throw new Error(`网络请求失败: ${message}`)
   } finally {
     clearTimeout(timer)
   }

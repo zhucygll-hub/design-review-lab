@@ -111,7 +111,7 @@ export function useAnalysis() {
 
       // Wait for API response
       const response = await apiPromise
-      const parsed = await parseApiResponse(response)
+      const parsed = await parseApiResponse<AnalysisResult>(response)
 
       if (!parsed.ok) {
         setUpload((prev) => ({
@@ -147,7 +147,7 @@ export function useAnalysis() {
         error: message,
       }))
     }
-  }, [upload.file, upload.previewUrl])
+  }, [upload.designType, upload.file, upload.previewUrl])
 
   const setDesignType = useCallback((designType: DesignType) => {
     setUpload((prev) => ({ ...prev, designType }))

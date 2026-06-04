@@ -3,7 +3,7 @@ import { buildPortfolioAnalysisPrompt } from '@/lib/ai-analysis-portfolio'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
 import { fetchWithTimeout } from '@/lib/fetch-utils'
 
-export const maxDuration = 90 // EdgeOne: up to 900s, generous safety margin
+export const maxDuration = 120
 
 const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       jobDescription
     )
 
-    let userText = baseUser
+    const userText = baseUser
 
     // Build user message: PDF as image (Doubao multimodal vision can read PDF pages)
     const userContent: Array<Record<string, unknown>> = [
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
           max_tokens: 4096,
         }),
       },
-      85000 // 85s timeout, EdgeOne has 900s limit
+      105000 // Return JSON before EdgeOne's 120s Cloud Functions limit
     )
 
     if (!response.ok) {

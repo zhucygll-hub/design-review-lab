@@ -3,7 +3,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { AnalysisResult } from '@/types'
 import { parseApiResponse } from '@/lib/api-utils'
-import { compressImageClient } from '@/lib/image-compress'
 
 interface PortfolioUploadState {
   file: File | null
@@ -152,7 +151,7 @@ export function usePortfolioAnalysis() {
 
       // Wait for original API response
       const response = await apiPromise
-      const parsed = await parseApiResponse(response)
+      const parsed = await parseApiResponse<AnalysisResult>(response)
 
       if (!parsed.ok) {
         setUpload((prev) => ({
@@ -180,7 +179,7 @@ export function usePortfolioAnalysis() {
             method: 'POST',
             body: reFormData,
           })
-          const reParsed = await parseApiResponse(reResponse)
+          const reParsed = await parseApiResponse<AnalysisResult>(reResponse)
           if (reParsed.ok) {
             analysisResult = reParsed.data
           }

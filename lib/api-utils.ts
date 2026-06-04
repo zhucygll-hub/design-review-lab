@@ -1,12 +1,12 @@
 /**
- * Safely parse an API response, handling Vercel HTML error pages gracefully.
+ * Safely parse an API response, handling platform HTML error pages gracefully.
  * Returns { ok, data, error } — always safe, never throws.
  */
-export async function parseApiResponse(response: Response): Promise<{
-  ok: boolean
-  data?: any
-  error?: string
-}> {
+type ApiParseResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string }
+
+export async function parseApiResponse<T>(response: Response): Promise<ApiParseResult<T>> {
   // Read body as text first
   let text: string
   try {
@@ -16,11 +16,22 @@ export async function parseApiResponse(response: Response): Promise<{
   }
 
   // Try to parse as JSON
-  let data: any
+  let data: T
   try {
-    data = JSON.parse(text)
+    data = JSON.parse(text) as T
   } catch {
-    // Vercel returned HTML error page (e.g. timeout, body too large)
+    if (response.status === 504) {
+      return {
+        ok: false,
+        error: 'AI 分析超过 EdgeOne 函数执行时限。请确认 edgeone.json 已部署，并稍后重试。',
+      }
+    }
+
+    if (response.status === 413) {
+      return { ok: false, error: '上传文件过大，请缩小文件后重试。' }
+    }
+
+    // The hosting platform returned an HTML error page.
     const preview =
       text
         .replace(/<[^>]*>/g, '')
@@ -30,7 +41,14 @@ export async function parseApiResponse(response: Response): Promise<{
   }
 
   if (!response.ok) {
-    return { ok: false, error: data?.error || `服务器错误 (${response.status})，请重试` }
+    const serverError =
+      typeof data === 'object' &&
+      data !== null &&
+      'error' in data &&
+      typeof data.error === 'string'
+        ? data.error
+        : undefined
+    return { ok: false, error: serverError || `服务器错误 (${response.status})，请重试` }
   }
 
   return { ok: true, data }
