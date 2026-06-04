@@ -4,7 +4,7 @@ import { normalizeAnalysisResult } from '@/lib/score-utils'
 import { fetchWithTimeout } from '@/lib/fetch-utils'
 import sharp from 'sharp'
 
-export const maxDuration = 60 // Vercel: max 60s for Hobby plan
+export const maxDuration = 90 // EdgeOne: up to 900s, generous safety margin
 
 const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
@@ -109,10 +109,10 @@ export async function POST(request: NextRequest) {
           ],
           temperature: 0,
           seed: 42,
-          max_tokens: 2048,
+          max_tokens: 4096,
         }),
       },
-      55000 // 55s timeout, within Vercel 60s limit
+      85000 // 85s timeout, EdgeOne has 900s limit
     )
 
     if (!response.ok) {
