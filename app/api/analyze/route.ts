@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
           ],
           temperature: 0,
           seed: 42,
-          max_tokens: 4096,
+          max_tokens: 2048,
         }),
       },
-      40000 // 40s timeout
+      55000 // 55s timeout, within Vercel 60s limit
     )
 
     if (!response.ok) {
