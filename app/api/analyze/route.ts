@@ -1,143 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
-import { normalizeAnalysisResult } from '@/lib/score-utils'
-import { fetchWithTimeout } from '@/lib/fetch-utils'
-import { DesignType } from '@/types'
 
-export const maxDuration = 90 // EdgeOne: up to 900s, generous safety margin
-
-const ARK_API_KEY = process.env.ARK_API_KEY
-const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
-const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3'
-
-// Edge-compatible base64 encoder (no Buffer API in Edge Functions)
-function arrayBufferToBase64(bytes: Uint8Array): string {
-  let binary = ''
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return btoa(binary)
-}
-
-function arrayBufferToDataUri(bytes: Uint8Array, mimeType: string): string {
-  const base64 = arrayBufferToBase64(bytes)
-  return `data:${mimeType};base64,${base64}`
-}
+// Minimal test route — if this still 500s, EdgeOne has a fundamental
+// incompatibility with Next.js App Router API routes in this project.
 
 export async function POST(request: NextRequest) {
-  if (!ARK_API_KEY || ARK_API_KEY === 'your-api-key-here') {
-    return NextResponse.json(
-      { error: '请先配置 ARK_API_KEY 环境变量' },
-      { status: 500 }
-    )
-  }
-
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const designType = (formData.get('designType') as string) || 'commercial'
 
-    if (!file) {
-      return NextResponse.json({ error: '未收到文件' }, { status: 400 })
-    }
-
-    if (file.type === 'application/pdf') {
-      return NextResponse.json(
-        { error: '暂不支持 PDF 格式，请将作品导出为 JPG 或 PNG 后上传' },
-        { status: 400 }
-      )
-    }
-
-    const arrayBuffer = await file.arrayBuffer()
-    const bytes = new Uint8Array(arrayBuffer)
-    const mimeType = file.type || 'image/png'
-
-    // Convert to data URI (client already compresses via compressImageClient)
-    const dataUri = arrayBufferToDataUri(bytes, mimeType)
-
-    // Build prompts
-    const { system, user } = buildAnalysisPrompt(designType as DesignType)
-
-    console.log('[analyze] Calling Doubao API...')
-
-    // Call Doubao via Volcano Ark
-    const response = await fetchWithTimeout(
-      `${ARK_BASE_URL}/chat/completions`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ARK_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: ARK_MODEL,
-          messages: [
-            { role: 'system', content: system },
-            {
-              role: 'user',
-              content: [
-                { type: 'image_url', image_url: { url: dataUri, detail: 'low' } },
-                { type: 'text', text: user },
-              ],
-            },
-          ],
-          temperature: 0,
-          seed: 42,
-          max_tokens: 4096,
-        }),
+    return NextResponse.json({
+      ok: true,
+      received: {
+        hasFile: !!file,
+        fileName: file?.name || '(none)',
+        fileType: file?.type || '(none)',
+        fileSize: file?.size ?? 0,
+        designType,
       },
-      85000 // 85s timeout, EdgeOne has 900s limit
-    )
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('Doubao API error:', response.status, errText)
-      return NextResponse.json(
-        { error: `AI 服务返回错误 (${response.status}): ${errText.slice(0, 200)}` },
-        { status: 502 }
-      )
-    }
-
-    const data = await response.json()
-    const content = data.choices?.[0]?.message?.content
-
-    if (!content) {
-      console.error('Empty response from Doubao:', JSON.stringify(data))
-      return NextResponse.json(
-        { error: 'AI 返回内容为空，请重试' },
-        { status: 502 }
-      )
-    }
-
-    // Parse the JSON from the response
-    let jsonStr = content.trim()
-    if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    }
-
-    const rawResult = JSON.parse(jsonStr)
-
-    // Add metadata
-    rawResult.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 9)
-    rawResult.createdAt = new Date().toISOString()
-    rawResult.mode = 'single'
-    rawResult.designType = designType as DesignType
-    rawResult.imageUrl = ''
-    rawResult.fileName = file.name
-
-    // Normalize
-    const { result } = normalizeAnalysisResult(rawResult, { mode: 'single' })
-
-    console.log('[analyze] Success — tier:', result.score, 'numeric:', result.scoreNumeric)
-    return NextResponse.json(result)
-  } catch (err) {
-    console.error('[analyze] Fatal error:', err)
-
-    // Always return JSON, even on crash
-    const message = err instanceof Error ? err.message : '分析失败'
-    return NextResponse.json(
-      { error: `分析失败: ${message}` },
-      { status: 500 }
-    )
+    })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }
