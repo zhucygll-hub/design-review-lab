@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from '@/lib/fetch-utils'
+import { jsonrepair } from 'jsonrepair'
 
 interface ArkErrorBody {
   error?: {
@@ -85,4 +86,37 @@ export function extractResponsesText(data: unknown): string | undefined {
   }
 
   return undefined
+}
+
+export function parseArkJson<T>(content: string, logPrefix: string): T {
+  let jsonText = content.trim()
+
+  if (jsonText.startsWith('```')) {
+    jsonText = jsonText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+  }
+
+  const objectStart = jsonText.indexOf('{')
+  const objectEnd = jsonText.lastIndexOf('}')
+  if (objectStart >= 0 && objectEnd > objectStart) {
+    jsonText = jsonText.slice(objectStart, objectEnd + 1)
+  }
+
+  try {
+    return JSON.parse(jsonText) as T
+  } catch (initialError) {
+    console.warn(
+      `${logPrefix} Invalid JSON from Ark, attempting repair, chars=${jsonText.length}`,
+      initialError
+    )
+  }
+
+  try {
+    return JSON.parse(jsonrepair(jsonText)) as T
+  } catch (repairError) {
+    console.error(
+      `${logPrefix} JSON repair failed, chars=${jsonText.length}, startsWithObject=${jsonText.startsWith('{')}, endsWithObject=${jsonText.endsWith('}')}`,
+      repairError
+    )
+    throw new Error('AI 返回的评审结果格式不完整，请重试')
+  }
 }

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildPortfolioAnalysisPrompt } from '@/lib/ai-analysis-portfolio'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
-import { extractResponsesText, fetchArkWithRetry, parseArkError } from '@/lib/ark-utils'
+import {
+  extractResponsesText,
+  fetchArkWithRetry,
+  parseArkError,
+  parseArkJson,
+} from '@/lib/ark-utils'
+import { AnalysisResult } from '@/types'
 
 export const maxDuration = 120
 
@@ -131,13 +137,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse JSON (strip possible markdown fences)
-    let jsonStr = content.trim()
-    if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    }
-
-    const rawResult = JSON.parse(jsonStr)
+    const rawResult = parseArkJson<AnalysisResult>(content, `[portfolio:${requestId}]`)
 
     // Add metadata
     rawResult.id = requestId

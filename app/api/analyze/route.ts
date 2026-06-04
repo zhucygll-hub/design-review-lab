@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
-import { fetchArkWithRetry, parseArkError } from '@/lib/ark-utils'
-import { DesignType } from '@/types'
+import { fetchArkWithRetry, parseArkError, parseArkJson } from '@/lib/ark-utils'
+import { AnalysisResult, DesignType } from '@/types'
 
 export const maxDuration = 120
 
@@ -138,12 +138,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let jsonStr = content.trim()
-    if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    }
-
-    const rawResult = JSON.parse(jsonStr)
+    const rawResult = parseArkJson<AnalysisResult>(content, `[analyze:${requestId}]`)
     rawResult.id = requestId
     rawResult.createdAt = new Date().toISOString()
     rawResult.mode = 'single'
