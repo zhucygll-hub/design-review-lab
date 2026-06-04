@@ -10,7 +10,7 @@ const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
 const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3'
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
-const AI_TIMEOUT_MS = 105_000
+const AI_TIMEOUT_MS = 90_000
 
 function arrayBufferToBase64(bytes: Uint8Array): string {
   let binary = ''
@@ -29,7 +29,15 @@ function createRequestId(): string {
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: true, route: 'analyze', time: Date.now() })
+  return NextResponse.json({
+    ok: true,
+    route: 'analyze',
+    configured: Boolean(ARK_API_KEY && ARK_API_KEY !== 'your-api-key-here'),
+    model: ARK_MODEL,
+    baseUrlHost: new URL(ARK_BASE_URL).host,
+    aiTimeoutMs: AI_TIMEOUT_MS,
+    time: Date.now(),
+  })
 }
 
 export async function POST(request: NextRequest) {
@@ -98,7 +106,7 @@ export async function POST(request: NextRequest) {
           ],
           temperature: 0,
           seed: 42,
-          max_tokens: 3072,
+          max_tokens: 2048,
         }),
       },
       AI_TIMEOUT_MS

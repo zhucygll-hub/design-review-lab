@@ -72,16 +72,19 @@ export function useAnalysis() {
 
     try {
       // Compress image client-side to stay under Vercel 4.5MB body limit
-      const compressed = await compressImageClient(upload.file, 1200, 0.8)
+      const compressed = await compressImageClient(upload.file, 1024, 0.72)
       const formData = new FormData()
       formData.append('file', compressed, upload.file.name)
       formData.append('designType', upload.designType)
 
       // Fire API call immediately
+      const controller = new AbortController()
+      const clientTimeout = setTimeout(() => controller.abort(), 100_000)
       const apiPromise = fetch('/api/analyze', {
         method: 'POST',
         body: formData,
-      })
+        signal: controller.signal,
+      }).finally(() => clearTimeout(clientTimeout))
 
       // Run dimension animation (capped at 90%)
       const maxAnimationProgress = 90
@@ -139,7 +142,14 @@ export function useAnalysis() {
 
       return analysisResult
     } catch (err) {
-      const message = err instanceof Error ? err.message : '网络错误，请检查连接后重试'
+      let message = '网络错误，请检查连接后重试'
+      if (err instanceof Error && err.name === 'AbortError') {
+        message = 'AI 分析等待时间过长，请稍后重试'
+      } else if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        message = '与 EdgeOne 函数的连接被中断。请确认最新部署已成功，并查看函数日志。'
+      } else if (err instanceof Error) {
+        message = err.message
+      }
       setUpload((prev) => ({
         ...prev,
         isUploading: false,

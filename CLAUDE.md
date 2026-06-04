@@ -163,6 +163,7 @@ ai-portfolio-tutor/
 - 优势: 国内节点直连；`edgeone.json` 将 Cloud Functions 超时配置为 120 秒
 - 部署方式: 同 Vercel — GitHub 授权 → 导入项目 → 配置环境变量 → 自动部署
 - 函数区域: 北京，靠近火山方舟北京 API
+- `cloudFunctions.mainlandRegions` 与 `cloudFunctions.nodejs` 必须同级
 
 ### 环境变量列表（两个平台都需配置）
 ```
