@@ -9,27 +9,18 @@ const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
 const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3'
 
-async function extractPdfText(buffer: Buffer): Promise<string> {
-  try {
-    // Note: pdf-parse may not work on all EdgeOne environments.
-    // It requires full Node.js runtime, not Edge Functions.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
-    const pdfData = await pdfParse(buffer)
-    return (pdfData.text || '').slice(0, 8000)
-  } catch {
-    console.warn('[portfolio] pdf-parse not available in this environment, text extraction skipped')
-    return ''
+// Edge-compatible base64 encoder (no Buffer API in Edge Functions)
+function arrayBufferToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i])
   }
+  return btoa(binary)
 }
 
-// PDF page rendering requires sharp (native module).
-// On EdgeOne Pages, sharp is not available in Edge Functions mode.
-// Text-only analysis will be used instead.
-async function renderPdfPages(_buffer: Buffer): Promise<string[]> {
-  console.warn('[portfolio] sharp not available — using text-only analysis')
-  return []
-}
+// Note: pdf-parse (CommonJS with native deps) and sharp (C++ native)
+// are NOT available in Edge Functions. We send the raw PDF as base64
+// data URI and let Doubao's multimodal vision handle it directly.
 
 export async function POST(request: NextRequest) {
   if (!ARK_API_KEY || ARK_API_KEY === 'your-api-key-here') {
@@ -57,13 +48,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-
-    // Extract text and render pages in parallel
-    const [extractedText, pageImages] = await Promise.all([
-      extractPdfText(buffer),
-      renderPdfPages(buffer),
-    ])
+    const arrayBuffer = await file.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+    const dataUri = `data:application/pdf;base64,${arrayBufferToBase64(bytes)}`
 
     // Build prompts
     const { system, user: baseUser } = buildPortfolioAnalysisPrompt(
@@ -72,21 +59,18 @@ export async function POST(request: NextRequest) {
       jobDescription
     )
 
-    // Embed extracted text into prompt
-    let userText = ''
-    if (extractedText) {
-      userText += `【作品集文本内容】\n${extractedText}\n\n`
-    }
-    userText += baseUser
+    let userText = baseUser
 
-    // Build user message: images (if any rendered) + text
-    const userContent: Array<Record<string, unknown>> = pageImages.map((dataUri) => ({
-      type: 'image_url',
-      image_url: { url: dataUri, detail: 'low' },
-    }))
-    userContent.push({ type: 'text', text: userText })
+    // Build user message: PDF as image (Doubao multimodal vision can read PDF pages)
+    const userContent: Array<Record<string, unknown>> = [
+      {
+        type: 'image_url',
+        image_url: { url: dataUri, detail: 'low' },
+      },
+      { type: 'text', text: userText },
+    ]
 
-    // Call Doubao via Volcano Ark with 40s timeout
+    // Call Doubao via Volcano Ark
     const response = await fetchWithTimeout(
       `${ARK_BASE_URL}/chat/completions`,
       {
@@ -147,7 +131,7 @@ export async function POST(request: NextRequest) {
     rawResult.imageUrl = ''
     rawResult.fileName = file.name
 
-    // === NORMALIZE: recalculate score, apply red flag caps, fix tier ===
+    // NORMALIZE
     const { result } = normalizeAnalysisResult(rawResult, { mode: 'portfolio' })
 
     return NextResponse.json(result)

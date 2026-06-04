@@ -10,10 +10,17 @@ const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
 const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3'
 
-// Convert buffer to data URI (no sharp — client already compresses, and EdgeOne
-// Edge Functions don't support native modules like sharp)
-function bufferToDataUri(buffer: Buffer, mimeType: string): string {
-  const base64 = buffer.toString('base64')
+// Edge-compatible base64 encoder (no Buffer API in Edge Functions)
+function arrayBufferToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
+}
+
+function arrayBufferToDataUri(bytes: Uint8Array, mimeType: string): string {
+  const base64 = arrayBufferToBase64(bytes)
   return `data:${mimeType};base64,${base64}`
 }
 
@@ -41,18 +48,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const arrayBuffer = await file.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
     const mimeType = file.type || 'image/png'
 
     // Convert to data URI (client already compresses via compressImageClient)
-    const dataUri = bufferToDataUri(buffer, mimeType)
+    const dataUri = arrayBufferToDataUri(bytes, mimeType)
 
     // Build prompts
     const { system, user } = buildAnalysisPrompt(designType as DesignType)
 
     console.log('[analyze] Calling Doubao API...')
 
-    // Call Doubao via Volcano Ark with 40s timeout
+    // Call Doubao via Volcano Ark
     const response = await fetchWithTimeout(
       `${ARK_BASE_URL}/chat/completions`,
       {
