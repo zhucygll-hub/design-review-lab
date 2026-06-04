@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { AnalysisResult, DesignType } from '@/types'
+import { parseApiResponse } from '@/lib/api-utils'
 
 interface UploadState {
   file: File | null
@@ -107,20 +108,20 @@ export function useAnalysis() {
 
       // Wait for API response
       const response = await apiPromise
-      const data = await response.json()
+      const parsed = await parseApiResponse(response)
 
-      if (!response.ok) {
+      if (!parsed.ok) {
         setUpload((prev) => ({
           ...prev,
           isUploading: false,
           isWaitingForApi: false,
-          error: data.error || '分析失败，请重试',
+          error: parsed.error || '分析失败，请重试',
         }))
         return
       }
 
       const analysisResult: AnalysisResult = {
-        ...data,
+        ...parsed.data,
         imageUrl: upload.previewUrl,
         fileName: upload.file.name,
       }

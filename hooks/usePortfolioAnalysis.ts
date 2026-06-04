@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { AnalysisResult } from '@/types'
+import { parseApiResponse } from '@/lib/api-utils'
 
 interface PortfolioUploadState {
   file: File | null
@@ -150,19 +151,20 @@ export function usePortfolioAnalysis() {
 
       // Wait for original API response
       const response = await apiPromise
-      const data = await response.json()
+      const parsed = await parseApiResponse(response)
 
-      if (!response.ok) {
+      if (!parsed.ok) {
         setUpload((prev) => ({
           ...prev,
           isUploading: false,
           isWaitingForApi: false,
-          error: data.error || '分析失败，请重试',
+          isAwaitingTargetInput: false,
+          error: parsed.error || '分析失败，请重试',
         }))
         return
       }
 
-      let analysisResult: AnalysisResult = data
+      let analysisResult: AnalysisResult = parsed.data
 
       // If user provided target info, attempt dim 7 re-evaluation
       if (targetInfoRef.current?.company || targetInfoRef.current?.role) {
@@ -177,9 +179,9 @@ export function usePortfolioAnalysis() {
             method: 'POST',
             body: reFormData,
           })
-          if (reResponse.ok) {
-            const reData = await reResponse.json()
-            analysisResult = reData
+          const reParsed = await parseApiResponse(reResponse)
+          if (reParsed.ok) {
+            analysisResult = reParsed.data
           }
         } catch {
           // Keep original result if re-evaluation fails
