@@ -3,7 +3,6 @@ import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
 import { fetchWithTimeout } from '@/lib/fetch-utils'
 import { DesignType } from '@/types'
-import sharp from 'sharp'
 
 export const maxDuration = 90 // EdgeOne: up to 900s, generous safety margin
 
@@ -11,20 +10,11 @@ const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
 const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3'
 
-async function compressImage(buffer: Buffer, mimeType: string): Promise<{ dataUri: string }> {
-  try {
-    let sharpInstance = sharp(buffer)
-    sharpInstance = sharpInstance.resize(1024, 1024, {
-      fit: 'inside',
-      withoutEnlargement: true,
-    })
-    const compressed = await sharpInstance.jpeg({ quality: 80 }).toBuffer()
-    const base64 = compressed.toString('base64')
-    return { dataUri: `data:image/jpeg;base64,${base64}` }
-  } catch {
-    const base64 = buffer.toString('base64')
-    return { dataUri: `data:${mimeType};base64,${base64}` }
-  }
+// Convert buffer to data URI (no sharp — client already compresses, and EdgeOne
+// Edge Functions don't support native modules like sharp)
+function bufferToDataUri(buffer: Buffer, mimeType: string): string {
+  const base64 = buffer.toString('base64')
+  return `data:${mimeType};base64,${base64}`
 }
 
 export async function POST(request: NextRequest) {
@@ -54,8 +44,8 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const mimeType = file.type || 'image/png'
 
-    // Compress image before sending
-    const { dataUri } = await compressImage(buffer, mimeType)
+    // Convert to data URI (client already compresses via compressImageClient)
+    const dataUri = bufferToDataUri(buffer, mimeType)
 
     // Build prompts
     const { system, user } = buildAnalysisPrompt(designType as DesignType)

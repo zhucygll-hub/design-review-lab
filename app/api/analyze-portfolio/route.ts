@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { buildPortfolioAnalysisPrompt } from '@/lib/ai-analysis-portfolio'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
 import { fetchWithTimeout } from '@/lib/fetch-utils'
-import sharp from 'sharp'
 
 export const maxDuration = 90 // EdgeOne: up to 900s, generous safety margin
 
@@ -12,29 +11,24 @@ const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
+    // Note: pdf-parse may not work on all EdgeOne environments.
+    // It requires full Node.js runtime, not Edge Functions.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
     const pdfData = await pdfParse(buffer)
     return (pdfData.text || '').slice(0, 8000)
   } catch {
+    console.warn('[portfolio] pdf-parse not available in this environment, text extraction skipped')
     return ''
   }
 }
 
-async function renderPdfPages(buffer: Buffer): Promise<string[]> {
-  const dataUris: string[] = []
-  for (let page = 0; page < 3; page++) {
-    try {
-      const compressed = await sharp(buffer, { page })
-        .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 80 })
-        .toBuffer()
-      dataUris.push(`data:image/jpeg;base64,${compressed.toString('base64')}`)
-    } catch {
-      break // stop on first failed page
-    }
-  }
-  return dataUris
+// PDF page rendering requires sharp (native module).
+// On EdgeOne Pages, sharp is not available in Edge Functions mode.
+// Text-only analysis will be used instead.
+async function renderPdfPages(_buffer: Buffer): Promise<string[]> {
+  console.warn('[portfolio] sharp not available — using text-only analysis')
+  return []
 }
 
 export async function POST(request: NextRequest) {
