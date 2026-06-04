@@ -2,7 +2,8 @@
 
 > 最后更新: 2026-06-04
 > 构建状态: ✅ `npm run build` 通过 (0 TS 错误, 9 条路由全部正常)
-> 服务器: http://localhost:3000
+> 线上地址 (Vercel): https://design-review-lab.vercel.app
+> 线上地址 (EdgeOne): 待部署
 
 ## 项目概述
 
@@ -121,7 +122,7 @@ ai-portfolio-tutor/
 ├── components/
 │   ├── layout/    (TopNav, BottomNav, AppLayout)
 │   ├── home/      (HeroSection, EntryCards, FeaturesGrid, CaseShowcase, Testimonials, CareerPreviewCard)
-│   ├── analyze/   (UploadZone, ImagePreview, ProgressBar, AIThinking, DimensionList)
+│   ├── analyze/   (UploadZone, ImagePreview, ProgressBar, AIThinking, DimensionList, DesignTypeToggle)
 │   ├── portfolio/ (PortfolioUploadZone, TargetInputCard)
 │   ├── result/    (ScoreBadge, RadarChart, MentorReview, ProsConsSection, SuggestionsSection, ExportButton)
 │   ├── history/   (HistoryList, EmptyState)
@@ -132,25 +133,56 @@ ai-portfolio-tutor/
 │   ├── useHistory.ts           # localStorage + 旧 key 迁移
 │   └── useMediaQuery.ts
 ├── lib/
-│   ├── ai-analysis-single.ts    # 单作品 Prompt (7维+redFlags+calibrationNote+流水线)
+│   ├── ai-analysis-single.ts    # 单作品 Prompt (7维+designType切换+redFlags)
 │   ├── ai-analysis-portfolio.ts # 作品集 Prompt (同上)
 │   ├── score-utils.ts           # 权重表 + 计算 + normalize + highScoreCalibration + redFlagCap
 │   ├── utils.ts                 # getScoreColor(7级), getScoreLabel(7级), formatDate
+│   ├── api-utils.ts             # [新] parseApiResponse — 防 Vercel HTML 错误页崩溃
+│   ├── image-compress.ts        # [新] compressImageClient — 浏览器端 Canvas 压缩
+│   ├── fetch-utils.ts           # [新] fetchWithTimeout — 超时保护
 │   └── mock-data.ts             # Mock 数据 (含 redFlags)
-├── types/index.ts               # NewScore(7档), AnalysisResult(含 redFlags + calibrationNote)
+├── types/index.ts               # NewScore(7档), DesignType, AnalysisResult, HistoryItem
 ├── .env.local
+├── vercel.json                  # Vercel 部署配置 (API maxDuration: 60s)
 └── package.json
+```
+
+## 部署
+
+### Vercel（当前线上）
+- 地址: https://design-review-lab.vercel.app
+- GitHub 仓库: https://github.com/zhucygll-hub/design-review-lab
+- 自动部署: 推送到 master → Vercel 自动构建
+- 环境变量在 Vercel Dashboard → Settings → Environment Variables 中配置
+- 函数超时: 60 秒 (Hobby 套餐上限)
+- 请求体限制: 4.5MB（通过客户端压缩规避）
+- 已知问题: `.vercel.app` 域名国内需 VPN 访问；API 生成时间可能超时
+
+### EdgeOne Pages（计划中 — 国内免 VPN 访问）
+- 平台: 腾讯云 EdgeOne Pages（公测免费）
+- 优势: 国内节点直连、函数超时远高于 60s、不需备案
+- 部署方式: 同 Vercel — GitHub 授权 → 导入项目 → 配置环境变量 → 自动部署
+- 待部署前: 恢复 max_tokens 4096、恢复 200 字点评、恢复 5 条建议
+
+### 环境变量列表（两个平台都需配置）
+```
+ARK_API_KEY=ark-25516a87-f5bf-4025-8434-e2ff8b219aa2-9269b
+ARK_MODEL=doubao-seed-2-0-pro-260215
+ARK_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
 ```
 
 ## 核心数据流
 
 ### 作品评审
 ```
-上传 JPG/PNG → 预览 + "开始 AI 分析"
-→ startAnalysis() → 7维动画 (0%→90%) + POST /api/analyze
-→ 服务端: sharp压缩1024px → base64 → 豆包 (temp=0, seed=42)
+上传 JPG/PNG
+→ 客户端 Canvas 压缩 (compressImageClient, 1200px, quality 0.8)
+→ 预览 + 选择设计类型 (DesignTypeToggle: 商业/概念)
+→ "开始 AI 分析" → startAnalysis() → 7维动画 (0%→90%)
+  + POST /api/analyze (FormData: compressed file + designType)
+→ 服务端: sharp压缩1024px → base64 → 豆包 (fetchWithTimeout 55s, max_tokens 2048, temp=0, seed=42)
 → normalizeAnalysisResult: 重算总分 → redFlagCap → highScoreCalibration → 等级
-→ 动画完 → 等待 API → API 返回 → sessionStorage → /result/[id]
+→ 客户端 parseApiResponse 安全解析 → sessionStorage → /result/[id]
 ```
 
 ### 作品集评审（含交互暂停）
@@ -182,19 +214,48 @@ S #F59E0B | A+ #10B981 | A #22C55E | B #4F8CFF | C #F59E0B | D #F97316 | E #EF44
 - `lib/mock-data.ts` — 补 redFlags: []
 
 ### 7档评分体系（第2轮）
-- `types/index.ts` — NewScore: S|A+|A|B|C|D|E（原 S|A|B|C|D）；AnalysisResult 新增 calibrationNote
+- `types/index.ts` — NewScore: S|A+|A|B|C|D|E；AnalysisResult 新增 calibrationNote
 - `lib/utils.ts` — getScoreColor: A+→#10B981, D→#F97316, E→#EF4444；getScoreLabel: 新增 A+("优异") 和 E("不足")
-- `lib/score-utils.ts` — numericToScore 新边界(93/88/82/74/67/60)；新增 highScoreCalibration（5条数值规则）；normalize 集成高分段校准 + calibrationNote 透传
-- `lib/ai-analysis-single.ts` — Prompt 重写：7级锚点(S~E)+子锚点(82-84/85-87/88-92/93-96/97-100)+五条件S门槛+高分区约束+calibrationNote
+- `lib/score-utils.ts` — numericToScore 新边界(93/88/82/74/67/60)；新增 highScoreCalibration（5条数值规则）
+- `lib/ai-analysis-single.ts` — Prompt 重写：7级锚点+子锚点+五条件S门槛+高分区约束+calibrationNote
 - `lib/ai-analysis-portfolio.ts` — 同上适配作品集
+
+### 概念/商业设计类型切换（第3轮）
+- `types/index.ts` — 新增 `DesignType = 'commercial' | 'concept'`，AnalysisResult/HistoryItem 各加 `designType?`
+- `lib/ai-analysis-single.ts` — `buildAnalysisPrompt(designType?)` 接受参数，概念模式下维度7评估标准从"落地性"切换为"探索价值/思想深度"
+- `components/analyze/DesignTypeToggle.tsx` — **新文件** — 二选一分段控件，🏢商业/落地（默认）+ 💡概念/实验
+- `hooks/useAnalysis.ts` — UploadState 加 designType，新增 setDesignType setter
+- `app/api/analyze/route.ts` — 读取 designType → 传给 buildAnalysisPrompt → 写入 response
+- `app/analyze/page.tsx` — ImagePreview 和按钮之间插入 DesignTypeToggle
+- `app/result/[id]/page.tsx` — 显示设计类型标签（概念=紫色，商业=蓝色）
+- `components/history/HistoryList.tsx` — 显示设计类型标签
+
+### GitHub + Vercel 部署（第4轮）
+- Git init + 推送到 github.com/zhucygll-hub/design-review-lab
+- Vercel 自动部署: https://design-review-lab.vercel.app
+- 环境变量: ARK_API_KEY, ARK_MODEL, ARK_BASE_URL
+- `vercel.json` — maxDuration 60s 配置
+
+### 客户端稳性修复（第5轮 — Vercel 线上调试）
+- `lib/image-compress.ts` — **新文件** — compressImageClient (Canvas API, 1200px/jpeg 0.8)
+- `lib/api-utils.ts` — **新文件** — parseApiResponse（先读 text→尝试 JSON→失败提取错误信息）
+- `lib/fetch-utils.ts` — **新文件** — fetchWithTimeout（55s timeout within 60s Vercel limit）
+- `hooks/useAnalysis.ts` — 使用 compressImageClient + parseApiResponse
+- `hooks/usePortfolioAnalysis.ts` — 同上
+- `app/api/analyze/route.ts` — max_tokens 4096→2048, 使用 fetchWithTimeout, 加 `export const maxDuration = 60`
+- `app/api/analyze-portfolio/route.ts` — 同上
+- `lib/ai-analysis-single.ts` — 导师点评 200字→80字, suggestions 5→3, pros/cons 4→3
+- `lib/ai-analysis-portfolio.ts` — 同上
 
 ## 已知待修复
 
-1. **结果页刷新丢失**: sessionStorage 换 IndexedDB
-2. **PDF 文字提取**: pdf-parse 为 CommonJS，Turbopack 生产环境待验证
-3. **作品集二次 API 延迟**: 用户提供目标后发起完整二次调用而非仅维度7补评
-4. **作品集无缩略图**: PDF 在预览区和历史列表无预览图
-5. **求职分析未实现**: CareerPreviewCard 为静态预告卡片
+1. **Vercel 国内无法访问**: `.vercel.app` 域名被墙 → 计划迁移 EdgeOne Pages
+2. **Vercel 函数超时**: 60s 上限导致不得不砍 token (4096→2048)、砍字数 (200→80字) → EdgeOne 可恢复完整输出
+3. **结果页刷新丢失**: sessionStorage 换 IndexedDB
+4. **PDF 文字提取**: pdf-parse 为 CommonJS，Turbopack 生产环境待验证
+5. **作品集二次 API 延迟**: 用户提供目标后发起完整二次调用而非仅维度7补评
+6. **作品集无缩略图**: PDF 在预览区和历史列表无预览图
+7. **求职分析未实现**: CareerPreviewCard 为静态预告卡片
 
 ## 启动命令
 
