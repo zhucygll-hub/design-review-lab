@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { AnalysisResult } from '@/types'
 import { parseApiResponse } from '@/lib/api-utils'
+import { compressImageClient } from '@/lib/image-compress'
 
 interface PortfolioUploadState {
   file: File | null

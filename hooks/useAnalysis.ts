@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { AnalysisResult, DesignType } from '@/types'
 import { parseApiResponse } from '@/lib/api-utils'
+import { compressImageClient } from '@/lib/image-compress'
 
 interface UploadState {
   file: File | null
@@ -70,8 +71,10 @@ export function useAnalysis() {
     }))
 
     try {
+      // Compress image client-side to stay under Vercel 4.5MB body limit
+      const compressed = await compressImageClient(upload.file, 1200, 0.8)
       const formData = new FormData()
-      formData.append('file', upload.file)
+      formData.append('file', compressed, upload.file.name)
       formData.append('designType', upload.designType)
 
       // Fire API call immediately
