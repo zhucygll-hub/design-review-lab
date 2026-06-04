@@ -25,7 +25,7 @@ export default function PortfolioUploadZone({ onFile, disabled = false }: Portfo
       'application/pdf': [],
     },
     maxFiles: 1,
-    maxSize: 30 * 1024 * 1024, // 30MB
+    maxSize: 8 * 1024 * 1024, // Keep EdgeOne and base64 request sizes manageable
     disabled,
   })
 
@@ -73,7 +73,7 @@ export default function PortfolioUploadZone({ onFile, disabled = false }: Portfo
         <p className="text-lg font-semibold text-white/80">
           {isDragActive ? '松开以上传作品集' : '拖拽或点击上传作品集 PDF'}
         </p>
-        <p className="mt-2 text-sm text-white/40">支持 PDF 格式（最大 30MB）</p>
+        <p className="mt-2 text-sm text-white/40">支持 PDF 格式（最大 8MB）</p>
       </div>
     </motion.div>
   )

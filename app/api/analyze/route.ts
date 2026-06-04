@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
-import { fetchWithTimeout } from '@/lib/fetch-utils'
+import { fetchArkWithRetry, parseArkError } from '@/lib/ark-utils'
 import { DesignType } from '@/types'
 
 export const maxDuration = 120
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       `[analyze:${requestId}] Calling Doubao, file=${file.name}, bytes=${file.size}, type=${designType}`
     )
 
-    const response = await fetchWithTimeout(
+    const response = await fetchArkWithRetry(
       `${ARK_BASE_URL}/chat/completions`,
       {
         method: 'POST',
@@ -111,7 +111,8 @@ export async function POST(request: NextRequest) {
           max_completion_tokens: 1800,
         }),
       },
-      AI_TIMEOUT_MS
+      AI_TIMEOUT_MS,
+      `[analyze:${requestId}]`
     )
 
     if (!response.ok) {
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
       console.error(`[analyze:${requestId}] Doubao error`, response.status, errText)
       return NextResponse.json(
         {
-          error: `AI 服务返回错误 (${response.status})，请稍后重试`,
+          error: parseArkError(response.status, errText, requestId),
           requestId,
         },
         { status: 502 }
