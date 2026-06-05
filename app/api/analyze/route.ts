@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
-import { normalizeAnalysisResult } from '@/lib/score-utils'
+import { getScoreLabel, normalizeAnalysisResult, numericToScore } from '@/lib/score-utils'
 import { fetchArkWithRetry, parseArkError, parseArkJson } from '@/lib/ark-utils'
 import { buildSingleWorkWeightTable } from '@/lib/single-work-scenario'
 import {
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
           seed: 42,
           thinking: { type: 'disabled' },
           response_format: { type: 'json_object' },
-          max_completion_tokens: 2600,
+          max_completion_tokens: 1200,
         }),
       },
       AI_TIMEOUT_MS,
@@ -180,6 +180,9 @@ export async function POST(request: NextRequest) {
     rawResult.reviewPurpose = reviewPurpose
     rawResult.imageUrl = ''
     rawResult.fileName = file.name
+    rawResult.scoreNumeric = rawResult.scoreNumeric ?? 0
+    rawResult.score = rawResult.score ?? numericToScore(rawResult.scoreNumeric)
+    rawResult.scoreLabel = rawResult.scoreLabel ?? getScoreLabel(rawResult.score)
     rawResult.redFlags = rawResult.redFlags ?? []
     rawResult.mentorReviews = rawResult.mentorReviews ?? [
       {

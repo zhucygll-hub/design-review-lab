@@ -117,6 +117,6 @@ export function parseArkJson<T>(content: string, logPrefix: string): T {
       `${logPrefix} JSON repair failed, chars=${jsonText.length}, startsWithObject=${jsonText.startsWith('{')}, endsWithObject=${jsonText.endsWith('}')}`,
       repairError
     )
-    throw new Error('AI 返回的评审结果格式不完整，请重试')
+    throw new Error('AI 返回的评审核心格式不完整，请重试')
   }
 }
