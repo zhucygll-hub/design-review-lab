@@ -230,6 +230,7 @@ export async function POST(request: NextRequest) {
       designType,
       workForm,
       reviewPurpose,
+      seedKey: `${requestId}:${file.name}:${file.size}`,
     })
     rawResult.mentorReviews = rawResult.mentorReviews ?? generatedFeedback.mentorReviews
     rawResult.pros = rawResult.pros ?? generatedFeedback.pros
