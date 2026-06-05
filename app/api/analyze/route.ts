@@ -50,6 +50,18 @@ function parseReviewPurpose(value: FormDataEntryValue | null): ReviewPurpose {
   return allowed.includes(value as ReviewPurpose) ? (value as ReviewPurpose) : 'course'
 }
 
+function getMissingDimensionNames(
+  result: PartialAnalysisResult,
+  requiredDimensions: Record<string, number>
+): string[] {
+  const dimensions = result.dimensions ?? []
+
+  return Object.keys(requiredDimensions).filter((name) => {
+    const dimension = dimensions.find((d) => d.name === name)
+    return !dimension || typeof dimension.score !== 'number'
+  })
+}
+
 export async function GET() {
   return NextResponse.json({
     ok: true,
@@ -108,67 +120,94 @@ export async function POST(request: NextRequest) {
       `[analyze:${requestId}] Calling Doubao, file=${file.name}, bytes=${file.size}, type=${designType}, form=${workForm}, purpose=${reviewPurpose}`
     )
 
-    const response = await fetchArkWithRetry(
-      `${ARK_BASE_URL}/chat/completions`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ARK_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: ARK_MODEL,
-          messages: [
-            { role: 'system', content: system },
-            {
-              role: 'user',
-              content: [
-                { type: 'image_url', image_url: { url: dataUri, detail: 'low' } },
-                { type: 'text', text: user },
-              ],
-            },
-          ],
-          temperature: 0,
-          seed: 42,
-          thinking: { type: 'disabled' },
-          response_format: { type: 'json_object' },
-          max_completion_tokens: 1200,
-        }),
-      },
-      AI_TIMEOUT_MS,
-      `[analyze:${requestId}]`
-    )
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error(`[analyze:${requestId}] Doubao error`, response.status, errText)
-      return NextResponse.json(
-        {
-          error: parseArkError(response.status, errText, requestId),
-          requestId,
-        },
-        { status: 502 }
-      )
-    }
-
-    const data = await response.json()
-    const content = data.choices?.[0]?.message?.content
-
-    if (!content) {
-      console.error(`[analyze:${requestId}] Empty Doubao response`, JSON.stringify(data))
-      return NextResponse.json(
-        { error: 'AI 返回内容为空，请重试', requestId },
-        { status: 502 }
-      )
-    }
-
-    const rawResult = parseArkJson<PartialAnalysisResult>(content, `[analyze:${requestId}]`)
     const requiredDimensions = buildSingleWorkWeightTable(designType, workForm, reviewPurpose)
+    let rawResult: PartialAnalysisResult | null = null
+    let lastFormatError = 'AI 返回的评审核心格式不完整，请重试'
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const retryInstruction =
+        attempt === 1
+          ? ''
+          : `\n\n上一次返回格式不完整。请重新分析同一张图片，只返回一个 JSON 对象；dimensions 必须完整包含以下 ${Object.keys(requiredDimensions).length} 个维度，且每个 score 必须是 0-100 的整数：${Object.keys(requiredDimensions).join('、')}。`
+
+      const response = await fetchArkWithRetry(
+        `${ARK_BASE_URL}/chat/completions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${ARK_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: ARK_MODEL,
+            messages: [
+              { role: 'system', content: system },
+              {
+                role: 'user',
+                content: [
+                  { type: 'image_url', image_url: { url: dataUri, detail: 'low' } },
+                  { type: 'text', text: user + retryInstruction },
+                ],
+              },
+            ],
+            temperature: 0,
+            seed: attempt === 1 ? 42 : undefined,
+            thinking: { type: 'disabled' },
+            response_format: { type: 'json_object' },
+            max_completion_tokens: 1800,
+          }),
+        },
+        AI_TIMEOUT_MS,
+        `[analyze:${requestId}:attempt${attempt}]`
+      )
+
+      if (!response.ok) {
+        const errText = await response.text()
+        console.error(`[analyze:${requestId}] Doubao error`, response.status, errText)
+        return NextResponse.json(
+          {
+            error: parseArkError(response.status, errText, requestId),
+            requestId,
+          },
+          { status: 502 }
+        )
+      }
+
+      const data = await response.json()
+      const content = data.choices?.[0]?.message?.content
+
+      if (!content) {
+        console.error(`[analyze:${requestId}] Empty Doubao response`, JSON.stringify(data))
+        lastFormatError = 'AI 返回内容为空，请重试'
+        continue
+      }
+
+      try {
+        const parsed = parseArkJson<PartialAnalysisResult>(content, `[analyze:${requestId}:attempt${attempt}]`)
+        const missingDimensions = getMissingDimensionNames(parsed, requiredDimensions)
+
+        if (missingDimensions.length > 0) {
+          lastFormatError = `AI 未完整返回维度评分：${missingDimensions.join('、')}`
+          console.warn(`[analyze:${requestId}] Incomplete dimensions on attempt ${attempt}: ${missingDimensions.join(', ')}`)
+          continue
+        }
+
+        rawResult = parsed
+        break
+      } catch (err) {
+        lastFormatError = err instanceof Error ? err.message : lastFormatError
+      }
+    }
+
+    if (!rawResult) {
+      throw new Error(lastFormatError)
+    }
+
     rawResult.dimensions = Object.entries(requiredDimensions).map(([name, weight]) => {
       const existing = rawResult.dimensions?.find((d) => d.name === name)
       return {
         name,
-        score: existing?.score ?? 0,
+        score: existing?.score ?? null,
         description: existing?.description || 'AI 未返回该维度说明',
         weight,
       }
