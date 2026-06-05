@@ -79,3 +79,7 @@ export interface HistoryItem {
   reviewPurpose?: ReviewPurpose
   createdAt: string
 }
+
+export type PartialAnalysisResult = Partial<AnalysisResult> & {
+  dimensions?: DimensionScore[]
+}

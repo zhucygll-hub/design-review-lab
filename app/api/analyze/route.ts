@@ -3,7 +3,13 @@ import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
 import { fetchArkWithRetry, parseArkError, parseArkJson } from '@/lib/ark-utils'
 import { buildSingleWorkWeightTable } from '@/lib/single-work-scenario'
-import { AnalysisResult, DesignType, ReviewPurpose, WorkForm } from '@/types'
+import {
+  AnalysisResult,
+  DesignType,
+  PartialAnalysisResult,
+  ReviewPurpose,
+  WorkForm,
+} from '@/types'
 
 export const maxDuration = 120
 
@@ -125,7 +131,7 @@ export async function POST(request: NextRequest) {
           seed: 42,
           thinking: { type: 'disabled' },
           response_format: { type: 'json_object' },
-          max_completion_tokens: 1800,
+          max_completion_tokens: 2600,
         }),
       },
       AI_TIMEOUT_MS,
@@ -155,7 +161,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const rawResult = parseArkJson<AnalysisResult>(content, `[analyze:${requestId}]`)
+    const rawResult = parseArkJson<PartialAnalysisResult>(content, `[analyze:${requestId}]`)
+    const requiredDimensions = buildSingleWorkWeightTable(designType, workForm, reviewPurpose)
+    rawResult.dimensions = Object.entries(requiredDimensions).map(([name, weight]) => {
+      const existing = rawResult.dimensions?.find((d) => d.name === name)
+      return {
+        name,
+        score: existing?.score ?? 0,
+        description: existing?.description || 'AI 未返回该维度说明',
+        weight,
+      }
+    })
     rawResult.id = requestId
     rawResult.createdAt = new Date().toISOString()
     rawResult.mode = 'single'
@@ -164,8 +180,62 @@ export async function POST(request: NextRequest) {
     rawResult.reviewPurpose = reviewPurpose
     rawResult.imageUrl = ''
     rawResult.fileName = file.name
+    rawResult.redFlags = rawResult.redFlags ?? []
+    rawResult.mentorReviews = rawResult.mentorReviews ?? [
+      {
+        role: 'graduation_tutor',
+        roleLabel: '毕业导师',
+        content: '该作品需要结合维度评分进一步完善设计逻辑和表达质量。',
+        highlights: ['补充过程', '强化表达'],
+      },
+      {
+        role: 'design_director',
+        roleLabel: '设计总监',
+        content: '建议优先处理视觉完成度、核心卖点和整体一致性问题。',
+        highlights: ['统一视觉', '突出重点'],
+      },
+      {
+        role: 'interviewer',
+        roleLabel: '企业面试官',
+        content: '请准备清楚说明设计目标、关键决策和最终效果之间的关系。',
+        highlights: ['讲清目标', '说明决策'],
+      },
+      {
+        role: 'ux_researcher',
+        roleLabel: '用户研究员',
+        content: '若作品涉及使用场景，应补充用户、情境和验证依据。',
+        highlights: ['明确用户', '补充依据'],
+      },
+    ]
+    rawResult.pros = rawResult.pros ?? ['有一定完成度', '具备继续优化基础', '能看出设计意图']
+    rawResult.cons = rawResult.cons ?? ['表达重点不够集中', '细节说服力不足', '需要强化场景依据']
+    rawResult.suggestions = rawResult.suggestions ?? [
+      {
+        id: 's1',
+        type: 'priority',
+        content: '先明确核心设计目标，再围绕目标重排信息和视觉重点。',
+        effort: 'medium',
+        impact: 'high',
+      },
+      {
+        id: 's2',
+        type: 'priority',
+        content: '优化版式层级、配色统一性和关键视觉焦点。',
+        effort: 'medium',
+        impact: 'high',
+      },
+      {
+        id: 's3',
+        type: 'quick_fix',
+        content: '删减弱信息，保留最能证明设计价值的内容。',
+        effort: 'low',
+        impact: 'medium',
+      },
+    ]
+    rawResult.calibrationNote =
+      rawResult.calibrationNote || '该评分由维度得分和代码层校准规则综合计算。'
 
-    const { result } = normalizeAnalysisResult(rawResult, { mode: 'single', weightTable })
+    const { result } = normalizeAnalysisResult(rawResult as AnalysisResult, { mode: 'single', weightTable })
     console.log(
       `[analyze:${requestId}] Success, tier=${result.score}, elapsed=${Date.now() - startedAt}ms`
     )
