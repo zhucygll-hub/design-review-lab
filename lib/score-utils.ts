@@ -162,11 +162,33 @@ function highScoreCalibration(
 
   const valid = dimensions.filter((d) => d.score !== null) as Array<{ score: number }>
   const scores = valid.map((d) => d.score)
+  const getDimensionScore = (name: string) =>
+    dimensions.find((d) => d.name === name)?.score ?? null
+
+  const visualScore =
+    getDimensionScore('视觉表达') ??
+    getDimensionScore('视觉表达能力')
+  const completionScore =
+    getDimensionScore('专业完成度') ??
+    getDimensionScore('项目完整度')
 
   const highDims = scores.filter((s) => s >= 90).length        // 90+
   const strongDims = scores.filter((s) => s >= 85).length       // 85+
   const weakDims = scores.filter((s) => s < 70).length          // below 70
   const hasBreakthrough = scores.some((s) => s >= 95)           // any dim at 95+
+
+  // Rule 0: Aesthetic gate. High completion cannot compensate for weak visual taste.
+  if (visualScore !== null) {
+    if (visualScore < 70) return Math.min(score, 73)
+    if (visualScore < 75) return Math.min(score, 79)
+    if (visualScore < 80) return Math.min(score, 81)
+    if (visualScore < 82 && completionScore !== null && completionScore >= 85) {
+      return Math.min(score, 81)
+    }
+    if (visualScore < 85 && score >= 88) {
+      return Math.min(score, 87)
+    }
+  }
 
   // Rule 1: No dimension reaches 90 → cannot be A+ or above
   if (highDims === 0) {
