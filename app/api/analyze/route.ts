@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
 import { normalizeAnalysisResult } from '@/lib/score-utils'
 import { fetchArkWithRetry, parseArkError, parseArkJson } from '@/lib/ark-utils'
-import { AnalysisResult, DesignType } from '@/types'
+import { buildSingleWorkWeightTable } from '@/lib/single-work-scenario'
+import { AnalysisResult, DesignType, ReviewPurpose, WorkForm } from '@/types'
 
 export const maxDuration = 120
 
@@ -26,6 +27,20 @@ function arrayBufferToDataUri(bytes: Uint8Array, mimeType: string): string {
 
 function createRequestId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+}
+
+function parseDesignType(value: FormDataEntryValue | null): DesignType {
+  return value === 'concept' ? 'concept' : 'commercial'
+}
+
+function parseWorkForm(value: FormDataEntryValue | null): WorkForm {
+  const allowed: WorkForm[] = ['board', 'physical_model', 'ui', 'poster', 'packaging_brand', 'other']
+  return allowed.includes(value as WorkForm) ? (value as WorkForm) : 'board'
+}
+
+function parseReviewPurpose(value: FormDataEntryValue | null): ReviewPurpose {
+  const allowed: ReviewPurpose[] = ['course', 'competition', 'job', 'practice']
+  return allowed.includes(value as ReviewPurpose) ? (value as ReviewPurpose) : 'course'
 }
 
 export async function GET() {
@@ -55,8 +70,9 @@ export async function POST(request: NextRequest) {
     console.log(`[analyze:${requestId}] Reading form data`)
     const formData = await request.formData()
     const file = formData.get('file') as File | null
-    const rawDesignType = formData.get('designType')
-    const designType: DesignType = rawDesignType === 'concept' ? 'concept' : 'commercial'
+    const designType = parseDesignType(formData.get('designType'))
+    const workForm = parseWorkForm(formData.get('workForm'))
+    const reviewPurpose = parseReviewPurpose(formData.get('reviewPurpose'))
 
     if (!file) {
       return NextResponse.json({ error: '未收到文件', requestId }, { status: 400 })
@@ -78,10 +94,11 @@ export async function POST(request: NextRequest) {
 
     const bytes = new Uint8Array(await file.arrayBuffer())
     const dataUri = arrayBufferToDataUri(bytes, file.type)
-    const { system, user } = buildAnalysisPrompt(designType)
+    const { system, user } = buildAnalysisPrompt(designType, workForm, reviewPurpose)
+    const weightTable = buildSingleWorkWeightTable(designType, workForm, reviewPurpose)
 
     console.log(
-      `[analyze:${requestId}] Calling Doubao, file=${file.name}, bytes=${file.size}, type=${designType}`
+      `[analyze:${requestId}] Calling Doubao, file=${file.name}, bytes=${file.size}, type=${designType}, form=${workForm}, purpose=${reviewPurpose}`
     )
 
     const response = await fetchArkWithRetry(
@@ -143,10 +160,12 @@ export async function POST(request: NextRequest) {
     rawResult.createdAt = new Date().toISOString()
     rawResult.mode = 'single'
     rawResult.designType = designType
+    rawResult.workForm = workForm
+    rawResult.reviewPurpose = reviewPurpose
     rawResult.imageUrl = ''
     rawResult.fileName = file.name
 
-    const { result } = normalizeAnalysisResult(rawResult, { mode: 'single' })
+    const { result } = normalizeAnalysisResult(rawResult, { mode: 'single', weightTable })
     console.log(
       `[analyze:${requestId}] Success, tier=${result.score}, elapsed=${Date.now() - startedAt}ms`
     )

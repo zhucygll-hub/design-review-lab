@@ -5,6 +5,11 @@ import { motion } from 'framer-motion'
 import { HistoryItem } from '@/types'
 import Badge from '@/components/shared/Badge'
 import { formatDate } from '@/lib/utils'
+import {
+  DESIGN_TYPE_LABELS,
+  REVIEW_PURPOSE_LABELS,
+  WORK_FORM_LABELS,
+} from '@/lib/single-work-scenario'
 
 interface HistoryListProps {
   items: HistoryItem[]
@@ -57,7 +62,17 @@ export default function HistoryList({ items }: HistoryListProps) {
                       ? 'bg-[#7C3AED]/10 text-[#A78BFA]'
                       : 'bg-[#4F8CFF]/10 text-[#4F8CFF]'
                   }`}>
-                    {item.designType === 'concept' ? '概念' : '商业'}
+                    {DESIGN_TYPE_LABELS[item.designType]}
+                  </span>
+                )}
+                {item.workForm && (
+                  <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/5 text-white/25">
+                    {WORK_FORM_LABELS[item.workForm]}
+                  </span>
+                )}
+                {item.reviewPurpose && (
+                  <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/5 text-white/25">
+                    {REVIEW_PURPOSE_LABELS[item.reviewPurpose]}
                   </span>
                 )}
               </div>

@@ -10,6 +10,11 @@ import ProsConsSection from '@/components/result/ProsConsSection'
 import SuggestionsSection from '@/components/result/SuggestionsSection'
 import ExportButton from '@/components/result/ExportButton'
 import { AnalysisResult } from '@/types'
+import {
+  DESIGN_TYPE_LABELS,
+  REVIEW_PURPOSE_LABELS,
+  WORK_FORM_LABELS,
+} from '@/lib/single-work-scenario'
 
 export default function ResultPage() {
   const params = useParams()
@@ -79,7 +84,17 @@ export default function ResultPage() {
                 ? 'bg-[#7C3AED]/10 text-[#A78BFA]'
                 : 'bg-[#4F8CFF]/10 text-[#4F8CFF]'
             }`}>
-              {result.designType === 'concept' ? '概念设计' : '商业设计'}
+              {DESIGN_TYPE_LABELS[result.designType]}
+            </span>
+          )}
+          {result.workForm && (
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/5 text-white/35">
+              {WORK_FORM_LABELS[result.workForm]}
+            </span>
+          )}
+          {result.reviewPurpose && (
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/5 text-white/35">
+              {REVIEW_PURPOSE_LABELS[result.reviewPurpose]}
             </span>
           )}
           <ExportButton />

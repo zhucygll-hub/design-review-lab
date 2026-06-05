@@ -230,6 +230,7 @@ function clamp(value: number, min: number, max: number): number {
 
 export interface NormalizeOptions {
   mode: 'single' | 'portfolio'
+  weightTable?: Record<string, number>
   /** Debug: if true, prints recalculation info to server console */
   debug?: boolean
 }
@@ -260,7 +261,7 @@ export function normalizeAnalysisResult(
   raw: AnalysisResult,
   opts: NormalizeOptions
 ): NormalizeResult {
-  const weightTable = opts.mode === 'portfolio' ? PORTFOLIO_WEIGHTS : SINGLE_WORK_WEIGHTS
+  const weightTable = opts.weightTable ?? (opts.mode === 'portfolio' ? PORTFOLIO_WEIGHTS : SINGLE_WORK_WEIGHTS)
 
   // --- Capture raw AI values before modification ---
   const aiRawScore = raw.scoreNumeric ?? 0

@@ -37,6 +37,8 @@ export type Score = NewScore | LegacyScore
 
 export type AnalysisMode = 'single' | 'portfolio'
 export type DesignType = 'commercial' | 'concept'
+export type WorkForm = 'board' | 'physical_model' | 'ui' | 'poster' | 'packaging_brand' | 'other'
+export type ReviewPurpose = 'course' | 'competition' | 'job' | 'practice'
 
 export interface AnalysisResult {
   id: string
@@ -55,6 +57,8 @@ export interface AnalysisResult {
   createdAt: string
   // Design type (single mode only)
   designType?: DesignType     // 'commercial' (default) | 'concept'
+  workForm?: WorkForm
+  reviewPurpose?: ReviewPurpose
   // Portfolio-specific
   targetCompany?: string
   targetRole?: string
@@ -71,5 +75,7 @@ export interface HistoryItem {
   scoreNumeric: number
   mode: AnalysisMode
   designType?: DesignType
+  workForm?: WorkForm
+  reviewPurpose?: ReviewPurpose
   createdAt: string
 }

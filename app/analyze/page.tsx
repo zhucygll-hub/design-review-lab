@@ -7,13 +7,22 @@ import ProgressBar from '@/components/analyze/ProgressBar'
 import AIThinking from '@/components/analyze/AIThinking'
 import DimensionList from '@/components/analyze/DimensionList'
 import DesignTypeToggle from '@/components/analyze/DesignTypeToggle'
+import ScenarioSelector from '@/components/analyze/ScenarioSelector'
 import Button from '@/components/shared/Button'
 import { useAnalysis } from '@/hooks/useAnalysis'
 import { useHistory } from '@/hooks/useHistory'
 
 export default function AnalyzePage() {
   const router = useRouter()
-  const { upload, result, handleFile, startAnalysis, setDesignType, reset } = useAnalysis()
+  const {
+    upload,
+    handleFile,
+    startAnalysis,
+    setDesignType,
+    setWorkForm,
+    setReviewPurpose,
+    reset,
+  } = useAnalysis()
   const { addItem } = useHistory()
 
   const handleStartAnalysis = async () => {
@@ -28,6 +37,8 @@ export default function AnalyzePage() {
         createdAt: analysisResult.createdAt,
         mode: 'single',
         designType: analysisResult.designType,
+        workForm: analysisResult.workForm,
+        reviewPurpose: analysisResult.reviewPurpose,
       })
       // Store result for result page access
       sessionStorage.setItem('lastAnalysis', JSON.stringify(analysisResult))
@@ -61,7 +72,15 @@ export default function AnalyzePage() {
 
       {/* Design type toggle */}
       {upload.file && !upload.isUploading && (
-        <DesignTypeToggle value={upload.designType} onChange={setDesignType} />
+        <div className="space-y-6">
+          <DesignTypeToggle value={upload.designType} onChange={setDesignType} />
+          <ScenarioSelector
+            workForm={upload.workForm}
+            reviewPurpose={upload.reviewPurpose}
+            onWorkFormChange={setWorkForm}
+            onReviewPurposeChange={setReviewPurpose}
+          />
+        </div>
       )}
 
       {/* Progress and thinking state */}

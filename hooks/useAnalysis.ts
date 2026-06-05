@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { AnalysisResult, DesignType } from '@/types'
+import { AnalysisResult, DesignType, ReviewPurpose, WorkForm } from '@/types'
 import { parseApiResponse } from '@/lib/api-utils'
 import { compressImageClient } from '@/lib/image-compress'
+import { buildSingleWorkDimensions } from '@/lib/single-work-scenario'
 
 interface UploadState {
   file: File | null
@@ -14,18 +15,10 @@ interface UploadState {
   currentDimension: string
   completedDimensions: string[]
   designType: DesignType
+  workForm: WorkForm
+  reviewPurpose: ReviewPurpose
   error: string | null
 }
-
-const ANALYSIS_DIMENSIONS = [
-  '创意与概念',
-  '逻辑与叙事',
-  '视觉表达',
-  '用户体验',
-  '专业完成度',
-  '创新价值',
-  '商业与现实价值',
-]
 
 export function useAnalysis() {
   const [upload, setUpload] = useState<UploadState>({
@@ -37,6 +30,8 @@ export function useAnalysis() {
     currentDimension: '',
     completedDimensions: [],
     designType: 'commercial',
+    workForm: 'board',
+    reviewPurpose: 'course',
     error: null,
   })
   const [result, setResult] = useState<AnalysisResult | null>(null)
@@ -52,6 +47,8 @@ export function useAnalysis() {
       currentDimension: '',
       completedDimensions: [],
       designType: prev.designType,
+      workForm: prev.workForm,
+      reviewPurpose: prev.reviewPurpose,
       error: null,
     }))
     setResult(null)
@@ -76,6 +73,8 @@ export function useAnalysis() {
       const formData = new FormData()
       formData.append('file', compressed, upload.file.name)
       formData.append('designType', upload.designType)
+      formData.append('workForm', upload.workForm)
+      formData.append('reviewPurpose', upload.reviewPurpose)
 
       // Fire API call immediately
       const controller = new AbortController()
@@ -87,13 +86,18 @@ export function useAnalysis() {
       }).finally(() => clearTimeout(clientTimeout))
 
       // Run dimension animation (capped at 90%)
+      const analysisDimensions = buildSingleWorkDimensions(
+        upload.designType,
+        upload.workForm,
+        upload.reviewPurpose
+      ).map((d) => d.name)
       const maxAnimationProgress = 90
-      for (let i = 0; i < ANALYSIS_DIMENSIONS.length; i++) {
-        const dim = ANALYSIS_DIMENSIONS[i]
+      for (let i = 0; i < analysisDimensions.length; i++) {
+        const dim = analysisDimensions[i]
         setUpload((prev) => ({
           ...prev,
           currentDimension: dim,
-          progress: Math.round(((i + 0.5) / ANALYSIS_DIMENSIONS.length) * maxAnimationProgress),
+          progress: Math.round(((i + 0.5) / analysisDimensions.length) * maxAnimationProgress),
         }))
 
         await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 300))
@@ -101,7 +105,7 @@ export function useAnalysis() {
         setUpload((prev) => ({
           ...prev,
           completedDimensions: [...prev.completedDimensions, dim],
-          progress: Math.round(((i + 1) / ANALYSIS_DIMENSIONS.length) * maxAnimationProgress),
+          progress: Math.round(((i + 1) / analysisDimensions.length) * maxAnimationProgress),
         }))
       }
 
@@ -157,10 +161,18 @@ export function useAnalysis() {
         error: message,
       }))
     }
-  }, [upload.designType, upload.file, upload.previewUrl])
+  }, [upload.designType, upload.file, upload.previewUrl, upload.reviewPurpose, upload.workForm])
 
   const setDesignType = useCallback((designType: DesignType) => {
     setUpload((prev) => ({ ...prev, designType }))
+  }, [])
+
+  const setWorkForm = useCallback((workForm: WorkForm) => {
+    setUpload((prev) => ({ ...prev, workForm }))
+  }, [])
+
+  const setReviewPurpose = useCallback((reviewPurpose: ReviewPurpose) => {
+    setUpload((prev) => ({ ...prev, reviewPurpose }))
   }, [])
 
   const reset = useCallback(() => {
@@ -176,6 +188,8 @@ export function useAnalysis() {
       currentDimension: '',
       completedDimensions: [],
       designType: 'commercial',
+      workForm: 'board',
+      reviewPurpose: 'course',
       error: null,
     })
     setResult(null)
@@ -187,6 +201,8 @@ export function useAnalysis() {
     handleFile,
     startAnalysis,
     setDesignType,
+    setWorkForm,
+    setReviewPurpose,
     reset,
   }
 }

@@ -1,4 +1,5 @@
-import { DesignType } from '@/types'
+import { DesignType, ReviewPurpose, WorkForm } from '@/types'
+import { buildScenarioSummary, buildSingleWorkDimensions } from '@/lib/single-work-scenario'
 
 const SYSTEM_PROMPT = `你是一个专业的设计评审 AI 导师团队。你需要从多个专业视角分析用户上传的单张设计作品图片。
 
@@ -149,8 +150,23 @@ impact 取值: low / medium / high
 
 请只返回 JSON，不要包含任何其他文字。`
 
-export function buildAnalysisPrompt(designType?: DesignType): { system: string; user: string } {
+export function buildAnalysisPrompt(
+  designType: DesignType = 'commercial',
+  workForm: WorkForm = 'board',
+  reviewPurpose: ReviewPurpose = 'course'
+): { system: string; user: string } {
   const isConcept = designType === 'concept'
+  const scenario = buildScenarioSummary(designType, workForm, reviewPurpose)
+  const dimensions = buildSingleWorkDimensions(designType, workForm, reviewPurpose)
+  const dimensionList = dimensions
+    .map((d, index) => `${index + 1}. ${d.name}（weight: ${d.weight}）— ${d.description}`)
+    .join('\n')
+  const dimensionJson = dimensions
+    .map(
+      (d) =>
+        `    { "name": "${d.name}", "score": 80, "description": "一句话评价", "weight": ${d.weight} }`
+    )
+    .join(',\n')
 
   let system = SYSTEM_PROMPT
 
@@ -167,7 +183,22 @@ export function buildAnalysisPrompt(designType?: DesignType): { system: string; 
     )
   }
 
-  let user = '请严格按照评分流程（类型判断→红牌检查→维度评分→等级判定→calibrationNote），逐维度分析这张设计作品图片。只返回 JSON，不要其他文字。'
+  const scenarioInstruction = `【本次评审场景】
+${scenario}
+
+【本次必须使用的 7 个评分维度】
+${dimensionList}
+
+返回 JSON 时，dimensions 必须且只能使用以下 name 和 weight，顺序也必须一致：
+[
+${dimensionJson}
+]
+
+请按当前场景理解作品，不要套用不相关场景的标准。`
+
+  let user = `${scenarioInstruction}
+
+请严格按照评分流程（类型判断→红牌检查→维度评分→等级判定→calibrationNote），逐维度分析这张设计作品图片。只返回 JSON，不要其他文字。`
 
   if (isConcept) {
     user = '用户已将此作品标记为"概念设计"。请从概念设计的角度评估：关注思想深度、原创性、设计边界的探索，而非市场可行性或商业落地性。\n\n' + user
