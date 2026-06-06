@@ -150,7 +150,16 @@ export async function POST(request: NextRequest) {
     rawResult.fileName = file.name
 
     // NORMALIZE
-    const { result } = normalizeAnalysisResult(rawResult, { mode: 'portfolio' })
+    const { result, debugInfo } = normalizeAnalysisResult(rawResult, { mode: 'portfolio' })
+
+    result.scoreBreakdown = {
+      rawWeightedScore: debugInfo.recalculatedScore,
+      afterRedFlagCap: debugInfo.afterRedFlagCap,
+      afterCalibration: debugInfo.afterCalibration,
+      redFlagCount: debugInfo.aiRawRedFlags.length,
+      wasRedFlagCapped: debugInfo.afterRedFlagCap !== debugInfo.recalculatedScore,
+      wasHighScoreCalibrated: debugInfo.wasCalibrated,
+    }
 
     console.log(
       `[portfolio:${requestId}] Success, tier=${result.score}, elapsed=${Date.now() - startedAt}ms`

@@ -15,6 +15,7 @@ import {
   REVIEW_PURPOSE_LABELS,
   WORK_FORM_LABELS,
 } from '@/lib/single-work-scenario'
+import { numericToScore, getScoreLabel } from '@/lib/score-utils'
 
 export default function ResultPage() {
   const params = useParams()
@@ -109,6 +110,137 @@ export default function ResultPage() {
           scoreNumeric={result.scoreNumeric}
         />
       </section>
+
+      {/* Score calibration explanation */}
+      {result.scoreBreakdown && (
+        <section className="glass rounded-2xl p-6">
+          <h2 className="text-sm font-semibold text-white/60 mb-4">评分校准说明</h2>
+
+          {/* Raw weighted score */}
+          <div className="flex items-center justify-between py-2">
+            <span className="text-sm text-white/45">七维加权原始分</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono text-white/65">
+                {result.scoreBreakdown.rawWeightedScore} 分
+              </span>
+              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-white/5 text-white/30">
+                {getScoreLabel(numericToScore(result.scoreBreakdown.rawWeightedScore))}
+              </span>
+            </div>
+          </div>
+
+          {/* Red flag cap */}
+          {result.scoreBreakdown.wasRedFlagCapped && (
+            <div className="mt-4 p-4 rounded-xl bg-[#EF4444]/5 border border-[#EF4444]/15 space-y-3">
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span className="text-sm font-semibold text-[#EF4444]">
+                  触发红牌封顶规则
+                </span>
+                <span className="text-[11px] text-[#EF4444]/50 ml-auto">
+                  {result.scoreBreakdown.redFlagCount} 条
+                </span>
+              </div>
+
+              <ul className="space-y-1.5">
+                {result.redFlags.map((flag, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-white/50">
+                    <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-[#EF4444]/50 shrink-0" />
+                    {flag}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-2 border-t border-[#EF4444]/10">
+                <p className="text-xs text-white/35 leading-relaxed">
+                  {result.scoreBreakdown.redFlagCount >= 3
+                    ? '≥3 条红牌 → 总分上限强制封顶至 59 分（E 级），无论维度分数如何。'
+                    : result.scoreBreakdown.redFlagCount >= 2
+                      ? '≥2 条红牌 → 总分上限强制封顶至 69 分（D 级），无论维度分数如何。'
+                      : '≥1 条红牌 → 总分上限强制封顶至 79 分（C 级），无论维度分数如何。'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <div className="flex-1 text-center py-2 rounded-lg bg-white/[0.02]">
+                  <div className="text-[11px] text-white/25 mb-0.5">原始加权</div>
+                  <div className="text-sm font-mono text-white/40">
+                    {result.scoreBreakdown.rawWeightedScore}
+                  </div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+                <div className="flex-1 text-center py-2 rounded-lg bg-[#EF4444]/5 border border-[#EF4444]/10">
+                  <div className="text-[11px] text-[#EF4444]/50 mb-0.5">封顶后（最终）</div>
+                  <div className="text-sm font-mono font-semibold text-[#EF4444]">
+                    {result.scoreBreakdown.afterRedFlagCap}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* High score calibration (no red flag cap) */}
+          {result.scoreBreakdown.wasHighScoreCalibrated && !result.scoreBreakdown.wasRedFlagCapped && (
+            <div className="mt-4 p-4 rounded-xl bg-[#4F8CFF]/5 border border-[#4F8CFF]/15">
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F8CFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <span className="text-sm font-semibold text-[#4F8CFF]">高分校准已触发</span>
+              </div>
+              <p className="text-xs text-white/40 leading-relaxed">
+                根据评分体系严格校准规则（视觉表达门槛、强维度数量、弱维度限制等），
+                系统进行了二次校准以确保评分一致性。
+              </p>
+              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#4F8CFF]/10">
+                <div className="flex-1 text-center py-2 rounded-lg bg-white/[0.02]">
+                  <div className="text-[11px] text-white/25 mb-0.5">加权原始</div>
+                  <div className="text-sm font-mono text-white/40">
+                    {result.scoreBreakdown.rawWeightedScore}
+                  </div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F8CFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+                <div className="flex-1 text-center py-2 rounded-lg bg-[#4F8CFF]/5 border border-[#4F8CFF]/10">
+                  <div className="text-[11px] text-[#4F8CFF]/50 mb-0.5">校准后</div>
+                  <div className="text-sm font-mono font-semibold text-[#4F8CFF]">
+                    {result.scoreBreakdown.afterCalibration}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* No calibration — brief confirmation */}
+          {!result.scoreBreakdown.wasRedFlagCapped && !result.scoreBreakdown.wasHighScoreCalibrated && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-white/25">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              未触发红牌封顶或高分校准，最终得分为七维加权计算结果
+            </div>
+          )}
+
+          {/* AI calibration note */}
+          {result.calibrationNote && (
+            <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+              <p className="text-[11px] text-white/25 mb-1">AI 评审备注</p>
+              <p className="text-xs text-white/40 leading-relaxed">{result.calibrationNote}</p>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Radar chart */}
       <section className="glass rounded-2xl p-6">

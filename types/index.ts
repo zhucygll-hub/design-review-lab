@@ -40,6 +40,15 @@ export type DesignType = 'commercial' | 'concept'
 export type WorkForm = 'board' | 'physical_model' | 'ui' | 'poster' | 'packaging_brand' | 'other'
 export type ReviewPurpose = 'course' | 'competition' | 'job' | 'practice'
 
+export interface ScoreBreakdown {
+  rawWeightedScore: number       // 七维加权原始分（红牌封顶前）
+  afterRedFlagCap: number        // 红牌封顶后分数（与 raw 相同则为未触发）
+  afterCalibration: number       // 最终校准后分数
+  redFlagCount: number           // 触发红牌数量
+  wasRedFlagCapped: boolean      // 是否因红牌被封顶
+  wasHighScoreCalibrated: boolean // 是否触发高分校准
+}
+
 export interface AnalysisResult {
   id: string
   imageUrl: string
@@ -65,6 +74,7 @@ export interface AnalysisResult {
   jobDescription?: string
   // Calibration
   calibrationNote?: string   // AI-generated explanation of why this score tier
+  scoreBreakdown?: ScoreBreakdown  // server-side calibration trace
 }
 
 export interface HistoryItem {

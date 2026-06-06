@@ -238,7 +238,15 @@ export async function POST(request: NextRequest) {
     rawResult.suggestions = rawResult.suggestions ?? generatedFeedback.suggestions
     rawResult.calibrationNote = rawResult.calibrationNote || generatedFeedback.calibrationNote
 
-    const { result } = normalizeAnalysisResult(rawResult as AnalysisResult, { mode: 'single', weightTable })
+    const { result, debugInfo } = normalizeAnalysisResult(rawResult as AnalysisResult, { mode: 'single', weightTable })
+    result.scoreBreakdown = {
+      rawWeightedScore: debugInfo.recalculatedScore,
+      afterRedFlagCap: debugInfo.afterRedFlagCap,
+      afterCalibration: debugInfo.afterCalibration,
+      redFlagCount: debugInfo.aiRawRedFlags.length,
+      wasRedFlagCapped: debugInfo.afterRedFlagCap !== debugInfo.recalculatedScore,
+      wasHighScoreCalibrated: debugInfo.wasCalibrated,
+    }
     console.log(
       `[analyze:${requestId}] Success, tier=${result.score}, elapsed=${Date.now() - startedAt}ms`
     )
