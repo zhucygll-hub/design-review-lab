@@ -11,6 +11,7 @@ const ENTRIES = [
     description: '上传单张设计作品，获取 7 维度的专业评分与导师点评',
     tag: '支持 JPG / PNG',
     href: '/analyze',
+    iconClassName: 'border-[#6B9CFF]/18 bg-[#6B9CFF]/8 text-[#8EB4FF] group-hover:text-[#F4EFE6]',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="4" y="4" width="11" height="14" rx="2" />
@@ -23,9 +24,10 @@ const ENTRIES = [
   {
     key: 'portfolio',
     title: '作品集评审',
-    description: '上传完整作品集 PDF，从项目质量、设计思维到岗位匹配度的全面审阅',
+    description: '上传完整作品集 PDF，从项目质量、设计思维到岗位匹配度全面审阅',
     tag: '支持 PDF · 7维加权评分',
     href: '/portfolio',
+    iconClassName: 'border-[#7EB98E]/18 bg-[#7EB98E]/8 text-[#7EE0A0] group-hover:text-[#F4EFE6]',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="4" y="3" width="13" height="18" rx="2" />
@@ -55,7 +57,7 @@ export default function EntryCards() {
             <Link href={entry.href}>
               <GlassCard className="group h-full cursor-pointer p-6 transition-all duration-300 hover:bg-[#1E1C19] hover:border-[#F4EFE6]/18">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/64 text-[#D6A85A] transition-colors group-hover:text-[#F4EFE6]">
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors ${entry.iconClassName}`}>
                     {entry.icon}
                   </div>
                   <div className="min-w-0">
