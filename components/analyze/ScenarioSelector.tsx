@@ -48,17 +48,17 @@ function OptionButton({
   return (
     <motion.button
       onClick={onClick}
-      className={`rounded-2xl border px-4 py-3 text-left transition-colors duration-200 ${
+      className={`rounded-xl border px-4 py-3 text-left transition-colors duration-200 ${
         selected
-          ? 'border-[#4F8CFF] bg-[#4F8CFF]/10'
-          : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+          ? 'border-[#D6A85A]/45 bg-[#D6A85A]/8'
+          : 'border-[#F4EFE6]/10 bg-[#181715] hover:border-[#F4EFE6]/20 hover:bg-[#1E1C19]'
       }`}
       whileTap={{ scale: 0.98 }}
     >
-      <span className={`text-sm font-semibold ${selected ? 'text-[#4F8CFF]' : 'text-white/65'}`}>
+      <span className={`text-sm font-semibold ${selected ? 'text-[#F4EFE6]' : 'text-[#F4EFE6]/64'}`}>
         {label}
       </span>
-      <span className="mt-1 block text-[11px] leading-tight text-white/30">{description}</span>
+      <span className="mt-1 block text-[11px] leading-tight text-[#F4EFE6]/36">{description}</span>
     </motion.button>
   )
 }
@@ -72,7 +72,7 @@ export default function ScenarioSelector({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <p className="text-sm font-medium text-white/50">作品形态</p>
+        <p className="text-sm font-medium text-[#F4EFE6]/52">作品形态</p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {workFormOptions.map((option) => (
             <OptionButton
@@ -87,7 +87,7 @@ export default function ScenarioSelector({
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-medium text-white/50">评审目的</p>
+        <p className="text-sm font-medium text-[#F4EFE6]/52">评审目的</p>
         <div className="grid grid-cols-2 gap-3">
           {purposeOptions.map((option) => (
             <OptionButton

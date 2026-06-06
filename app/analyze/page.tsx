@@ -50,10 +50,13 @@ export default function AnalyzePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="report-shell rounded-2xl p-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">作品评审</h1>
-          <p className="text-sm text-white/40 mt-1">上传单张设计作品，获取 7 维度专业评审</p>
+          <p className="report-kicker">提交评审材料</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[#F4EFE6]">作品评审</h1>
+          <p className="mt-2 text-sm leading-6 text-[#F4EFE6]/48">
+            上传单张设计作品，补充评审背景后生成七维评分和导师意见。
+          </p>
         </div>
         {upload.file && !upload.isUploading && (
           <Button variant="ghost" size="sm" onClick={reset}>
@@ -97,15 +100,15 @@ export default function AnalyzePage() {
 
       {/* Error state */}
       {upload.error && (
-        <div className="glass rounded-2xl p-6 text-center space-y-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F59E0B]/10 mx-auto">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="report-panel p-6 text-center space-y-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#D6A85A]/10 mx-auto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <p className="text-sm text-white/60">{upload.error}</p>
+          <p className="text-sm text-[#F4EFE6]/62">{upload.error}</p>
           <Button variant="secondary" size="sm" onClick={reset}>
             重新上传
           </Button>

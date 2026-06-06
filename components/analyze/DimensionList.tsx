@@ -19,8 +19,8 @@ const ALL_DIMENSIONS = [
 
 export default function DimensionList({ completedDimensions, currentDimension }: DimensionListProps) {
   return (
-    <div className="glass rounded-2xl p-6">
-      <h3 className="text-sm font-semibold text-white/60 mb-4">分析维度</h3>
+    <div className="report-panel p-6">
+      <h3 className="text-sm font-semibold text-[#F4EFE6]/64 mb-4">评审维度</h3>
       <div className="grid grid-cols-2 gap-3">
         {ALL_DIMENSIONS.map((dim) => {
           const isCompleted = completedDimensions.includes(dim)
@@ -31,10 +31,10 @@ export default function DimensionList({ completedDimensions, currentDimension }:
               key={dim}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors duration-300 ${
                 isCompleted
-                  ? 'bg-[#22C55E]/5 text-white/80'
+                  ? 'bg-[#7EB98E]/8 text-[#F4EFE6]/78'
                   : isActive
-                  ? 'bg-[#4F8CFF]/10 text-white'
-                  : 'bg-transparent text-white/30'
+                  ? 'bg-[#D6A85A]/9 text-[#F4EFE6]'
+                  : 'bg-transparent text-[#F4EFE6]/32'
               }`}
               animate={isActive ? { scale: [1, 1.02, 1] } : {}}
               transition={{ duration: 1.5, repeat: Infinity }}
@@ -42,17 +42,17 @@ export default function DimensionList({ completedDimensions, currentDimension }:
               {/* Status icon */}
               <div className="shrink-0">
                 {isCompleted ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7EB98E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 ) : isActive ? (
                   <motion.div
-                    className="h-2 w-2 rounded-full bg-[#4F8CFF]"
+                    className="h-2 w-2 rounded-full bg-[#D6A85A]"
                     animate={{ opacity: [1, 0.3, 1] }}
                     transition={{ duration: 1, repeat: Infinity }}
                   />
                 ) : (
-                  <div className="h-2 w-2 rounded-full bg-white/10" />
+                  <div className="h-2 w-2 rounded-full bg-[#F4EFE6]/12" />
                 )}
               </div>
               <span>{dim}</span>

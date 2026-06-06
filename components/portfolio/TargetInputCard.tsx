@@ -27,21 +27,23 @@ export default function TargetInputCard({ onSubmit, onSkip }: TargetInputCardPro
     >
       <GlassCard className="p-6 space-y-5">
         <div className="text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED]/20 to-[#4F8CFF]/20 mx-auto mb-3">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="5" />
-              <path d="M20 21a8 8 0 1 0-16 0" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/64 mx-auto mb-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 5H20" />
+              <path d="M6 9H14" />
+              <path d="M6 13H12" />
+              <path d="M15 18L17 20L21 15" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold">在继续之前...</h3>
-          <p className="text-sm text-white/40 mt-1">
-            为了给你更精准的岗位匹配分析，请告诉我们你的目标
+          <h3 className="text-lg font-semibold text-[#F4EFE6]">补充评审背景</h3>
+          <p className="text-sm text-[#F4EFE6]/45 mt-1">
+            目标信息会帮助系统判断作品集是否适合对应岗位
           </p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-white/40 mb-1.5">
+            <label className="block text-xs font-medium text-[#F4EFE6]/45 mb-1.5">
               目标公司
             </label>
             <input
@@ -49,12 +51,12 @@ export default function TargetInputCard({ onSubmit, onSkip }: TargetInputCardPro
               value={company}
               onChange={(e) => setCompany(e.target.value)}
               placeholder="如：字节跳动、小米、大疆..."
-              className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#7C3AED]/40 focus:bg-white/[0.05] transition-all"
+              className="w-full rounded-xl bg-[#11100E]/60 border border-[#F4EFE6]/10 px-4 py-3 text-sm text-[#F4EFE6] placeholder:text-[#F4EFE6]/24 focus:outline-none focus:border-[#D6A85A]/50 focus:bg-[#11100E]/80 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/40 mb-1.5">
+            <label className="block text-xs font-medium text-[#F4EFE6]/45 mb-1.5">
               目标岗位
             </label>
             <input
@@ -62,20 +64,20 @@ export default function TargetInputCard({ onSubmit, onSkip }: TargetInputCardPro
               value={role}
               onChange={(e) => setRole(e.target.value)}
               placeholder="如：UI/UX设计师、工业设计师..."
-              className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#7C3AED]/40 focus:bg-white/[0.05] transition-all"
+              className="w-full rounded-xl bg-[#11100E]/60 border border-[#F4EFE6]/10 px-4 py-3 text-sm text-[#F4EFE6] placeholder:text-[#F4EFE6]/24 focus:outline-none focus:border-[#D6A85A]/50 focus:bg-[#11100E]/80 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/40 mb-1.5">
-              岗位描述 JD <span className="text-white/20">（选填，分析更精准）</span>
+            <label className="block text-xs font-medium text-[#F4EFE6]/45 mb-1.5">
+              岗位描述 JD <span className="text-[#F4EFE6]/25">（选填，分析更精准）</span>
             </label>
             <textarea
               value={jd}
               onChange={(e) => setJd(e.target.value)}
               placeholder="粘贴目标岗位的 JD 描述..."
               rows={3}
-              className="w-full rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#7C3AED]/40 focus:bg-white/[0.05] transition-all resize-none"
+              className="w-full rounded-xl bg-[#11100E]/60 border border-[#F4EFE6]/10 px-4 py-3 text-sm text-[#F4EFE6] placeholder:text-[#F4EFE6]/24 focus:outline-none focus:border-[#D6A85A]/50 focus:bg-[#11100E]/80 transition-all resize-none"
             />
           </div>
         </div>

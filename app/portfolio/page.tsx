@@ -10,19 +10,9 @@ import Button from '@/components/shared/Button'
 import { usePortfolioAnalysis } from '@/hooks/usePortfolioAnalysis'
 import { useHistory } from '@/hooks/useHistory'
 
-const PORTFOLIO_DIMENSIONS = [
-  '项目质量',
-  '项目完整度',
-  '设计思维',
-  '专业能力',
-  '视觉表达能力',
-  '差异化竞争力',
-  '岗位匹配度',
-]
-
 export default function PortfolioAnalyzePage() {
   const router = useRouter()
-  const { upload, result, handleFile, startAnalysis, setTargetInfo, skipTargetInfo, reset } =
+  const { upload, handleFile, startAnalysis, setTargetInfo, skipTargetInfo, reset } =
     usePortfolioAnalysis()
   const { addItem } = useHistory()
 
@@ -46,10 +36,13 @@ export default function PortfolioAnalyzePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="report-shell rounded-2xl p-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">作品集评审</h1>
-          <p className="text-sm text-white/40 mt-1">上传完整作品集 PDF，获取 7 维度加权专业评审</p>
+          <p className="report-kicker">提交评审材料</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[#F4EFE6]">作品集评审</h1>
+          <p className="mt-2 text-sm leading-6 text-[#F4EFE6]/48">
+            上传完整作品集 PDF，系统会从项目质量、设计思维、视觉表达和岗位匹配度生成综合报告。
+          </p>
         </div>
         {upload.file && !upload.isUploading && (
           <Button variant="ghost" size="sm" onClick={reset}>
@@ -63,9 +56,9 @@ export default function PortfolioAnalyzePage() {
 
       {/* File preview info */}
       {upload.file && !upload.isUploading && (
-        <div className="glass rounded-2xl p-6 flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <div className="report-panel p-6 flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/64">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8Z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="16" y1="13" x2="8" y2="13" />
@@ -73,8 +66,8 @@ export default function PortfolioAnalyzePage() {
             </svg>
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-white/80 truncate">{upload.file.name}</p>
-            <p className="text-xs text-white/40 mt-0.5">
+            <p className="text-sm font-medium text-[#F4EFE6]/78 truncate">{upload.file.name}</p>
+            <p className="text-xs text-[#F4EFE6]/42 mt-0.5">
               {(upload.file.size / (1024 * 1024)).toFixed(1)} MB · PDF
             </p>
           </div>
@@ -103,15 +96,15 @@ export default function PortfolioAnalyzePage() {
 
       {/* Error state */}
       {upload.error && (
-        <div className="glass rounded-2xl p-6 text-center space-y-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F59E0B]/10 mx-auto">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="report-panel p-6 text-center space-y-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#D6A85A]/10 mx-auto">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <p className="text-sm text-white/60">{upload.error}</p>
+          <p className="text-sm text-[#F4EFE6]/62">{upload.error}</p>
           <Button variant="secondary" size="sm" onClick={reset}>
             重新上传
           </Button>

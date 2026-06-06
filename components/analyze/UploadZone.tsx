@@ -37,11 +37,11 @@ export default function UploadZone({ onFile, disabled = false }: UploadZoneProps
     >
       <div
         {...getRootProps()}
-        className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-16 transition-all duration-300 cursor-pointer
+        className={`relative flex flex-col items-center justify-center rounded-2xl border border-dashed p-16 transition-all duration-300 cursor-pointer
           ${
             isDragActive
-              ? 'border-[#4F8CFF] bg-[#4F8CFF]/5 scale-[1.02]'
-              : 'border-white/10 glass hover:border-white/20 hover:bg-white/[0.04]'
+              ? 'border-[#D6A85A] bg-[#D6A85A]/7 scale-[1.01]'
+              : 'border-[#F4EFE6]/14 bg-[#181715] hover:border-[#F4EFE6]/24 hover:bg-[#1E1C19]'
           }
           ${disabled ? 'pointer-events-none opacity-50' : ''}
         `}
@@ -52,14 +52,14 @@ export default function UploadZone({ onFile, disabled = false }: UploadZoneProps
         <motion.div
           animate={{ y: isDragActive ? -8 : 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4F8CFF]/20 to-[#7C3AED]/20"
+          className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[#F4EFE6]/10 bg-[#11100E]/64"
         >
           <svg
             width="36"
             height="36"
             viewBox="0 0 24 24"
             fill="none"
-            stroke={isDragActive ? '#4F8CFF' : 'rgba(255,255,255,0.4)'}
+            stroke={isDragActive ? '#D6A85A' : 'rgba(244,239,230,0.46)'}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -71,10 +71,11 @@ export default function UploadZone({ onFile, disabled = false }: UploadZoneProps
           </svg>
         </motion.div>
 
-        <p className="text-lg font-semibold text-white/80">
+        <p className="text-lg font-semibold text-[#F4EFE6]">
           {isDragActive ? '松开以上传作品' : '拖拽或点击上传作品'}
         </p>
-        <p className="mt-2 text-sm text-white/40">支持 JPG、PNG 格式</p>
+        <p className="mt-2 text-sm text-[#F4EFE6]/45">提交单张作品图片，系统会生成一份评审报告</p>
+        <p className="mt-1 text-xs text-[#F4EFE6]/30">支持 JPG、PNG 格式</p>
       </div>
     </motion.div>
   )

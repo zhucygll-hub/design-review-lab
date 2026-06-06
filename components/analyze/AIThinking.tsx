@@ -12,7 +12,7 @@ export default function AIThinking({ currentDimension, isWaitingForApi = false }
     <div className="flex flex-col items-center gap-6 py-8">
       {/* Pulsing brain icon */}
       <motion.div
-        className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4F8CFF]/20 to-[#7C3AED]/20"
+        className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[#F4EFE6]/10 bg-[#181715]"
         animate={isWaitingForApi
           ? { scale: [1, 1.08, 1], rotate: [0, 0, 0] }
           : { scale: [1, 1.05, 1] }
@@ -23,16 +23,16 @@ export default function AIThinking({ currentDimension, isWaitingForApi = false }
         }
       >
         <motion.div
-          className="absolute inset-0 rounded-2xl bg-[#4F8CFF]/10"
+          className="absolute inset-0 rounded-2xl bg-[#D6A85A]/8"
           animate={{ opacity: [0, 0.6, 0], scale: [1, 1.3, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         />
         {isWaitingForApi ? (
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
         ) : (
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4F8CFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5V6" />
             <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5V6" />
@@ -51,8 +51,8 @@ export default function AIThinking({ currentDimension, isWaitingForApi = false }
         className="text-center"
       >
         {isWaitingForApi ? (
-          <p className="text-sm text-white/50">
-            AI 正在综合生成分析报告
+          <p className="text-sm text-[#F4EFE6]/52">
+            正在整理评审结论
             <motion.span
               animate={{ opacity: [0, 1, 0] }}
               transition={{ duration: 1.2, repeat: Infinity }}
@@ -62,9 +62,9 @@ export default function AIThinking({ currentDimension, isWaitingForApi = false }
             </motion.span>
           </p>
         ) : (
-          <p className="text-sm text-white/50">
-            正在分析
-            <span className="text-white/80 font-medium ml-1">{currentDimension}</span>
+          <p className="text-sm text-[#F4EFE6]/52">
+            正在审阅
+            <span className="text-[#F4EFE6] font-medium ml-1">{currentDimension}</span>
             <motion.span
               animate={{ opacity: [0, 1, 0] }}
               transition={{ duration: 1.2, repeat: Infinity }}
