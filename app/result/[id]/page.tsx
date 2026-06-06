@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import ScoreBadge from '@/components/result/ScoreBadge'
+import ResultInsightPanel from '@/components/result/ResultInsightPanel'
 import RadarChart from '@/components/result/RadarChart'
 import MentorReview from '@/components/result/MentorReview'
 import ProsConsSection from '@/components/result/ProsConsSection'
@@ -124,6 +125,8 @@ export default function ResultPage() {
           scoreNumeric={result.scoreNumeric}
         />
       </section>
+
+      <ResultInsightPanel result={result} />
 
       {/* Score calibration explanation */}
       {result.scoreBreakdown && (
@@ -364,7 +367,6 @@ export default function ResultPage() {
 
       {/* Suggestions */}
       <section>
-        <h2 className="report-title text-lg mb-4">优化建议</h2>
         <SuggestionsSection suggestions={result.suggestions} />
       </section>
     </div>
