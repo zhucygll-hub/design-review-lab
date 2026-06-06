@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildPortfolioAnalysisPrompt } from '@/lib/ai-analysis-portfolio'
-import { normalizeAnalysisResult } from '@/lib/score-utils'
+import { normalizeAnalysisResult, getBoundaryProximity } from '@/lib/score-utils'
 import {
   extractResponsesText,
   fetchArkWithRetry,
@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
             },
           ],
           thinking: { type: 'disabled' },
+          top_p: 1,
           max_output_tokens: 2200,
         }),
       },
@@ -159,6 +160,7 @@ export async function POST(request: NextRequest) {
       redFlagCount: debugInfo.aiRawRedFlags.length,
       wasRedFlagCapped: debugInfo.afterRedFlagCap !== debugInfo.recalculatedScore,
       wasHighScoreCalibrated: debugInfo.wasCalibrated,
+      boundaryProximity: getBoundaryProximity(debugInfo.afterCalibration),
     }
 
     console.log(

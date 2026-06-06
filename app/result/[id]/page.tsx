@@ -232,6 +232,26 @@ export default function ResultPage() {
             </div>
           )}
 
+          {/* Boundary proximity warning */}
+          {result.scoreBreakdown.boundaryProximity && (
+            <div className="mt-4 p-3 rounded-xl bg-[#F59E0B]/5 border border-[#F59E0B]/15 flex items-start gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <div>
+                <span className="text-xs font-semibold text-[#F59E0B]">
+                  该分数接近 {result.scoreBreakdown.boundaryProximity} 等级边界
+                </span>
+                <p className="text-xs text-white/35 mt-0.5 leading-relaxed">
+                  由于 AI 视觉模型即使在固定种子下也存在 ±2-4 分的正常评分波动，
+                  同一作品在不同次分析中可能在相邻档位间变化。这不是系统计算错误。
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* AI calibration note */}
           {result.calibrationNote && (
             <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">

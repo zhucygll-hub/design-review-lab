@@ -121,6 +121,40 @@ export function getScoreTierDescription(score: NewScore): string {
 }
 
 // ============================================================
+// Boundary proximity detection
+// ============================================================
+
+const TIER_BOUNDARIES: Array<{ threshold: number; label: string }> = [
+  { threshold: 93, label: 'S/A+' },
+  { threshold: 88, label: 'A+/A' },
+  { threshold: 82, label: 'A/B' },
+  { threshold: 74, label: 'B/C' },
+  { threshold: 67, label: 'C/D' },
+  { threshold: 60, label: 'D/E' },
+]
+
+/**
+ * If the final score is within ±3 of a tier boundary, returns the boundary label
+ * (e.g. "C/D"), otherwise null. Helps explain why re-running the same image
+ * might flip between adjacent tiers due to normal AI scoring variance.
+ */
+export function getBoundaryProximity(finalScore: number): string | null {
+  const PROXIMITY = 3
+  let closest: { boundary: string; distance: number } | null = null
+
+  for (const { threshold, label } of TIER_BOUNDARIES) {
+    const distance = Math.abs(finalScore - threshold)
+    if (distance <= PROXIMITY) {
+      if (!closest || distance < closest.distance) {
+        closest = { boundary: label, distance }
+      }
+    }
+  }
+
+  return closest?.boundary ?? null
+}
+
+// ============================================================
 // Red flag cap rules
 // ============================================================
 

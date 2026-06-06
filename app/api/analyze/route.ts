@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { buildAnalysisPrompt } from '@/lib/ai-analysis-single'
-import { getScoreLabel, normalizeAnalysisResult, numericToScore } from '@/lib/score-utils'
+import { getScoreLabel, normalizeAnalysisResult, numericToScore, getBoundaryProximity } from '@/lib/score-utils'
 import { fetchArkWithRetry, parseArkError, parseArkJson } from '@/lib/ark-utils'
 import { buildSingleWorkFeedback } from '@/lib/single-work-feedback'
 import { buildSingleWorkWeightTable } from '@/lib/single-work-scenario'
@@ -151,7 +151,8 @@ export async function POST(request: NextRequest) {
               },
             ],
             temperature: 0,
-            seed: attempt === 1 ? 42 : undefined,
+            top_p: 1,
+            seed: 42,
             thinking: { type: 'disabled' },
             response_format: { type: 'json_object' },
             max_completion_tokens: 1800,
@@ -246,6 +247,7 @@ export async function POST(request: NextRequest) {
       redFlagCount: debugInfo.aiRawRedFlags.length,
       wasRedFlagCapped: debugInfo.afterRedFlagCap !== debugInfo.recalculatedScore,
       wasHighScoreCalibrated: debugInfo.wasCalibrated,
+      boundaryProximity: getBoundaryProximity(debugInfo.afterCalibration),
     }
     console.log(
       `[analyze:${requestId}] Success, tier=${result.score}, elapsed=${Date.now() - startedAt}ms`

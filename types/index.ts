@@ -47,6 +47,7 @@ export interface ScoreBreakdown {
   redFlagCount: number           // 触发红牌数量
   wasRedFlagCapped: boolean      // 是否因红牌被封顶
   wasHighScoreCalibrated: boolean // 是否触发高分校准
+  boundaryProximity: string | null // 若最终分在档位边界 ±3 内，描述该边界（如 "C/D"），否则 null
 }
 
 export interface AnalysisResult {
