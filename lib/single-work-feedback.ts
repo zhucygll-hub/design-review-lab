@@ -204,3 +204,95 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
     calibrationNote: `${band}：${strongest.name}较强，但${weakest.name}限制了最终分数。`,
   }
 }
+
+// ============================================================
+// Portfolio fallback — used when AI-generated reviews fail quality check
+// ============================================================
+
+type PortfolioFeedbackInput = {
+  dimensions: DimensionScore[]
+  scoreNumeric: number
+  targetCompany?: string
+  targetRole?: string
+}
+
+export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): GeneratedFeedback {
+  const sorted = validDimensions(input.dimensions)
+  const strongest = sorted[0] ?? { name: '项目质量', score: input.scoreNumeric, description: '' }
+  const weakest = sorted[sorted.length - 1] ?? { name: '差异化竞争力', score: input.scoreNumeric, description: '' }
+  const secondWeakest = sorted[sorted.length - 2] ?? weakest
+  const strongestDetail = compactDetail(strongest)
+  const weakestDetail = compactDetail(weakest)
+  const target = input.targetRole || input.targetCompany || '目标岗位'
+
+  const mentorReviews: MentorReview[] = [
+    {
+      role: 'graduation_tutor',
+      roleLabel: '毕业导师',
+      content: `这份作品集的${strongestDetail}完成度较好，但从学术角度看，${weakestDetail}还需要更多过程性材料支撑。建议补充设计推导、草图迭代和决策依据，让评审老师能看到完整的方法论。`,
+      highlights: [strongest.name, `补过程依据`],
+    },
+    {
+      role: 'design_director',
+      roleLabel: '设计总监',
+      content: `作品集整体视觉表达已具备基本意识，${strongest.name}是可用资产。但${weakest.name}会削弱专业感，建议统一作品集版式、字体层级和色彩系统，确保翻页观感一致。`,
+      highlights: [`强化${strongest.name}`, `统一视觉语言`],
+    },
+    {
+      role: 'interviewer',
+      roleLabel: '企业面试官',
+      content: `如果投递${target}，${strongest.name}会是面试中的正面的讨论点。但需要准备解释${weakest.name}的设计决策——面试官会追问"为什么这样处理"以及"如果重来会怎么改"。`,
+      highlights: ['准备决策解释', `说明${secondWeakest.name}改进计划`],
+    },
+    {
+      role: 'ux_researcher',
+      roleLabel: '用户研究员',
+      content: `从用户视角看，作品集的信息架构需要更清晰：阅读者能否快速判断你的设计方向？${strongestDetail}可以作为锚点项目，但要确保每个项目都能在 10 秒内传达核心价值。`,
+      highlights: ['优化信息架构', '明确受众'],
+    },
+  ]
+
+  const pros = [
+    `${strongest.name}相对突出，能支撑作品集的核心价值`,
+    `${secondWeakest.name === weakest.name ? '多个项目' : secondWeakest.name}展示了持续的设计能力`,
+    `作品集整体结构具有进一步优化的空间`,
+  ]
+
+  const cons = [
+    `${weakest.name}是当前最明显短板，容易影响整体判断`,
+    `${secondWeakest.name}还需要更充分的证据或更深入的展示`,
+    `作品集需要更清晰的叙事线和受众定位`,
+  ]
+
+  const suggestions: Suggestion[] = [
+    {
+      id: 's1',
+      type: 'priority',
+      content: `优先补强${weakest.name}，增加过程展示和决策依据`,
+      effort: 'medium',
+      impact: 'high',
+    },
+    {
+      id: 's2',
+      type: 'priority',
+      content: `统一作品集的视觉语言和版式系统，提高专业感`,
+      effort: 'medium',
+      impact: 'high',
+    },
+    {
+      id: 's3',
+      type: 'quick_fix',
+      content: `为每个项目添加简短的设计说明和关键决策点`,
+      effort: 'low',
+      impact: 'medium',
+    },
+  ]
+
+  return {
+    mentorReviews,
+    pros,
+    cons,
+    suggestions,
+    calibrationNote: `作品集${strongest.name}表现较好，但${weakest.name}限制了整体竞争力。`,
+  }
+}

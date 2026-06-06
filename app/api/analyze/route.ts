@@ -4,6 +4,7 @@ import { getScoreLabel, normalizeAnalysisResult, numericToScore, getBoundaryProx
 import { fetchArkWithRetry, parseArkError, parseArkJson } from '@/lib/ark-utils'
 import { buildSingleWorkFeedback } from '@/lib/single-work-feedback'
 import { buildSingleWorkWeightTable } from '@/lib/single-work-scenario'
+import { shouldUseAIReviews, validateMentorReviews } from '@/lib/mentor-review-quality'
 import {
   AnalysisResult,
   DesignType,
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
             seed: 42,
             thinking: { type: 'disabled' },
             response_format: { type: 'json_object' },
-            max_completion_tokens: 1800,
+            max_completion_tokens: 2600,
           }),
         },
         AI_TIMEOUT_MS,
@@ -233,7 +234,39 @@ export async function POST(request: NextRequest) {
       reviewPurpose,
       seedKey: `${requestId}:${file.name}:${file.size}`,
     })
-    rawResult.mentorReviews = rawResult.mentorReviews ?? generatedFeedback.mentorReviews
+
+    // ── Mentor review quality control ──
+    // AI is now asked to generate mentorReviews with visual evidence.
+    // Validate them; fall back to templates if quality is insufficient.
+    const aiReviews = rawResult.mentorReviews
+    if (aiReviews && aiReviews.length === 4) {
+      const qualityCheck = shouldUseAIReviews(aiReviews)
+      if (qualityCheck.usable) {
+        const fullReport = validateMentorReviews(aiReviews)
+        rawResult.mentorReviews = aiReviews
+        console.log(
+          `[analyze:${requestId}] AI mentor reviews accepted (quality=${fullReport.score}/100, issues=${fullReport.issues.length})`
+        )
+        if (fullReport.issues.length > 0) {
+          console.warn(
+            `[analyze:${requestId}] Mentor review minor issues:`,
+            fullReport.issues.map((i) => i.detail)
+          )
+        }
+      } else {
+        console.warn(
+          `[analyze:${requestId}] AI mentor reviews rejected: ${qualityCheck.reason}. Falling back to templates.`
+        )
+        rawResult.mentorReviews = generatedFeedback.mentorReviews
+      }
+    } else {
+      console.log(
+        `[analyze:${requestId}] AI returned ${aiReviews?.length ?? 0} mentor reviews, using template fallback`
+      )
+      rawResult.mentorReviews = generatedFeedback.mentorReviews
+    }
+
+    // pros/cons/suggestions/calibrationNote: prefer AI, fall back to template
     rawResult.pros = rawResult.pros ?? generatedFeedback.pros
     rawResult.cons = rawResult.cons ?? generatedFeedback.cons
     rawResult.suggestions = rawResult.suggestions ?? generatedFeedback.suggestions

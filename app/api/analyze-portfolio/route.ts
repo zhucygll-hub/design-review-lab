@@ -7,6 +7,8 @@ import {
   parseArkError,
   parseArkJson,
 } from '@/lib/ark-utils'
+import { buildPortfolioFeedbackFallback } from '@/lib/single-work-feedback'
+import { shouldUseAIReviews, validateMentorReviews } from '@/lib/mentor-review-quality'
 import { AnalysisResult } from '@/types'
 
 export const maxDuration = 120
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
           ],
           thinking: { type: 'disabled' },
           top_p: 1,
-          max_output_tokens: 2200,
+          max_output_tokens: 3000,
         }),
       },
       AI_TIMEOUT_MS,
@@ -152,6 +154,54 @@ export async function POST(request: NextRequest) {
 
     // NORMALIZE
     const { result, debugInfo } = normalizeAnalysisResult(rawResult, { mode: 'portfolio' })
+
+    // ── Mentor review quality control ──
+    const aiReviews = result.mentorReviews
+    if (aiReviews && aiReviews.length === 4) {
+      const qualityCheck = shouldUseAIReviews(aiReviews)
+      if (qualityCheck.usable) {
+        const fullReport = validateMentorReviews(aiReviews)
+        console.log(
+          `[portfolio:${requestId}] AI mentor reviews accepted (quality=${fullReport.score}/100, issues=${fullReport.issues.length})`
+        )
+        if (fullReport.issues.length > 0) {
+          console.warn(
+            `[portfolio:${requestId}] Mentor review minor issues:`,
+            fullReport.issues.map((i) => i.detail)
+          )
+        }
+      } else {
+        console.warn(
+          `[portfolio:${requestId}] AI mentor reviews rejected: ${qualityCheck.reason}. Using template fallback.`
+        )
+        const fallback = buildPortfolioFeedbackFallback({
+          dimensions: result.dimensions,
+          scoreNumeric: result.scoreNumeric,
+          targetCompany: result.targetCompany,
+          targetRole: result.targetRole,
+        })
+        result.mentorReviews = fallback.mentorReviews
+        result.pros = result.pros ?? fallback.pros
+        result.cons = result.cons ?? fallback.cons
+        result.suggestions = result.suggestions ?? fallback.suggestions
+        result.calibrationNote = result.calibrationNote || fallback.calibrationNote
+      }
+    } else {
+      console.log(
+        `[portfolio:${requestId}] AI returned ${aiReviews?.length ?? 0} mentor reviews, using template fallback`
+      )
+      const fallback = buildPortfolioFeedbackFallback({
+        dimensions: result.dimensions,
+        scoreNumeric: result.scoreNumeric,
+        targetCompany: result.targetCompany,
+        targetRole: result.targetRole,
+      })
+      result.mentorReviews = fallback.mentorReviews
+      result.pros = result.pros ?? fallback.pros
+      result.cons = result.cons ?? fallback.cons
+      result.suggestions = result.suggestions ?? fallback.suggestions
+      result.calibrationNote = result.calibrationNote || fallback.calibrationNote
+    }
 
     result.scoreBreakdown = {
       rawWeightedScore: debugInfo.recalculatedScore,
