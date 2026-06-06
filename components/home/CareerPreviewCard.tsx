@@ -1,33 +1,42 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import GlassCard from '@/components/shared/GlassCard'
 
 export default function CareerPreviewCard() {
   return (
-    <motion.div
+    <motion.section
       initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.5 }}
+      className="report-panel flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-8"
     >
-      <GlassCard className="p-6 flex items-center gap-5 border-white/5">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#F59E0B]/15 to-[#EF4444]/10">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex items-start gap-5">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#D6A85A]/20 bg-[#D6A85A]/10 text-[#D6A85A]">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-white/70">求职分析</h3>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#F59E0B]/10 text-[#F59E0B]">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-semibold text-[#F4EFE6]">求职分析</h3>
+            <span className="rounded-full bg-[#D6A85A]/12 px-2.5 py-1 text-xs font-medium text-[#D6A85A]">
               即将上线
             </span>
           </div>
-          <p className="mt-1 text-sm text-white/35">
-            匹配目标岗位与公司，获得针对性的差距分析与面试准备建议
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F4EFE6]/52">
+            匹配目标岗位与公司，获得针对性的差距分析、面试准备建议和作品集项目排序。
           </p>
         </div>
-      </GlassCard>
-    </motion.div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 text-center text-xs text-[#F4EFE6]/44 md:min-w-[300px]">
+        {['岗位匹配', '项目取舍', '面试提问'].map((item) => (
+          <span key={item} className="rounded-full border border-[#F4EFE6]/10 px-3 py-2">
+            {item}
+          </span>
+        ))}
+      </div>
+    </motion.section>
   )
 }
