@@ -2,13 +2,12 @@
 
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import GradientText from '@/components/shared/GradientText'
 import Button from '@/components/shared/Button'
 
 const TAGLINES = [
-  '从设计学生到专业设计师的成长伙伴',
-  'AI 驱动的多维设计评审实验室',
-  '覆盖作品评审、作品集审阅与求职分析',
+  '像导师一样指出问题，像报告一样说明依据',
+  '覆盖作品评审、作品集审阅与求职准备',
+  '让每一次修改都有明确方向',
 ]
 
 export default function HeroSection() {
@@ -30,7 +29,7 @@ export default function HeroSection() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="mb-8"
       >
-        <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-[#4F8CFF] to-[#7C3AED] text-2xl font-bold shadow-xl shadow-[#4F8CFF]/25">
+        <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl border border-[#F4EFE6]/14 bg-[#F4EFE6] text-2xl font-bold text-[#11100E]">
           DR
         </div>
       </motion.div>
@@ -40,10 +39,19 @@ export default function HeroSection() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl"
+        className="max-w-4xl text-4xl font-semibold tracking-[-0.04em] text-[#F4EFE6] md:text-6xl lg:text-7xl"
       >
-        <GradientText>AI设计评审实验室</GradientText>
+        AI设计评审实验室
       </motion.h1>
+
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.35 }}
+        className="mt-5 max-w-2xl text-base leading-7 text-[#F4EFE6]/54 md:text-lg"
+      >
+        上传作品后，系统会用七维评分、红牌校准和导师视角解释它为什么好、为什么不够好，以及下一版先改哪里。
+      </motion.p>
 
       {/* Animated tagline */}
       <motion.div
@@ -54,7 +62,7 @@ export default function HeroSection() {
         transition={{ duration: 0.4 }}
         className="mt-6 h-8"
       >
-        <p className="text-lg text-white/50 md:text-xl">{TAGLINES[lineIndex]}</p>
+        <p className="text-sm font-medium text-[#D6A85A] md:text-base">{TAGLINES[lineIndex]}</p>
       </motion.div>
 
       {/* CTA */}
@@ -78,16 +86,19 @@ export default function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 1 }}
-        className="mt-16 flex flex-wrap items-center justify-center gap-8 md:gap-16"
+        className="mt-16 grid w-full max-w-2xl grid-cols-3 border-y border-[#F4EFE6]/10"
       >
         {[
           { value: '2', label: '评审模式' },
           { value: '7', label: '分析维度' },
-          { value: 'S~D', label: '评分体系' },
-        ].map((stat) => (
-          <div key={stat.label} className="text-center">
-            <div className="text-2xl font-bold text-white md:text-3xl">{stat.value}</div>
-            <div className="mt-1 text-sm text-white/40">{stat.label}</div>
+          { value: 'S~E', label: '评分体系' },
+        ].map((stat, index) => (
+          <div
+            key={stat.label}
+            className={`py-5 text-center ${index > 0 ? 'border-l border-[#F4EFE6]/10' : ''}`}
+          >
+            <div className="text-2xl font-semibold text-[#F4EFE6] md:text-3xl">{stat.value}</div>
+            <div className="mt-1 text-sm text-[#F4EFE6]/42">{stat.label}</div>
           </div>
         ))}
       </motion.div>
