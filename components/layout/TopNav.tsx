@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import GradientText from '@/components/shared/GradientText'
 
 export default function TopNav() {
   const pathname = usePathname()
@@ -16,19 +15,26 @@ export default function TopNav() {
     <nav className="fixed top-0 left-0 right-0 z-50 hidden md:block">
       <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#4F8CFF] to-[#7C3AED] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#4F8CFF]/20">
+          <div className="h-10 w-10 rounded-xl bg-[#F4EFE6] flex items-center justify-center text-[#11100E] font-bold text-sm">
             DR
           </div>
-          <GradientText className="text-lg font-bold">设计评审实验室</GradientText>
+          <div>
+            <span className="block text-lg font-semibold tracking-[-0.02em] text-[#F4EFE6]">
+              设计评审实验室
+            </span>
+            <span className="block text-[11px] text-[#F4EFE6]/36">
+              Design Review Lab
+            </span>
+          </div>
         </Link>
 
-        <div className="flex items-center gap-1 rounded-full glass p-1">
+        <div className="flex items-center gap-1 rounded-full border border-[#F4EFE6]/10 bg-[#181715]/90 p-1">
           <Link
             href="/"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
               isActive('/') && pathname === '/'
-                ? 'bg-white/10 text-white'
-                : 'text-white/50 hover:text-white'
+                ? 'bg-[#F4EFE6] text-[#11100E]'
+                : 'text-[#F4EFE6]/52 hover:text-[#F4EFE6]'
             }`}
           >
             首页
@@ -37,8 +43,8 @@ export default function TopNav() {
             href="/analyze"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
               isActive('/analyze')
-                ? 'bg-white/10 text-white'
-                : 'text-white/50 hover:text-white'
+                ? 'bg-[#F4EFE6] text-[#11100E]'
+                : 'text-[#F4EFE6]/52 hover:text-[#F4EFE6]'
             }`}
           >
             作品评审
@@ -47,8 +53,8 @@ export default function TopNav() {
             href="/portfolio"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
               isActive('/portfolio')
-                ? 'bg-white/10 text-white'
-                : 'text-white/50 hover:text-white'
+                ? 'bg-[#F4EFE6] text-[#11100E]'
+                : 'text-[#F4EFE6]/52 hover:text-[#F4EFE6]'
             }`}
           >
             作品集评审
@@ -57,8 +63,8 @@ export default function TopNav() {
             href="/history"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
               isActive('/history')
-                ? 'bg-white/10 text-white'
-                : 'text-white/50 hover:text-white'
+                ? 'bg-[#F4EFE6] text-[#11100E]'
+                : 'text-[#F4EFE6]/52 hover:text-[#F4EFE6]'
             }`}
           >
             历史记录

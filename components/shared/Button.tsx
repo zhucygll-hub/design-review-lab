@@ -16,16 +16,16 @@ interface ButtonProps {
 
 const variants = {
   primary:
-    'bg-[#4F8CFF] text-white hover:bg-[#3B7AEF] shadow-lg shadow-[#4F8CFF]/20',
+    'bg-[#F4EFE6] text-[#11100E] hover:bg-[#E7DBC7]',
   secondary:
-    'glass text-white hover:glass-hover',
-  ghost: 'text-white/60 hover:text-white hover:bg-white/5',
+    'border border-[#F4EFE6]/12 bg-[#181715] text-[#F4EFE6] hover:bg-[#1E1C19] hover:border-[#F4EFE6]/20',
+  ghost: 'text-[#F4EFE6]/60 hover:text-[#F4EFE6] hover:bg-[#F4EFE6]/6',
 }
 
 const sizes = {
-  sm: 'px-4 py-2 text-sm rounded-xl',
-  md: 'px-6 py-3 text-base rounded-xl',
-  lg: 'px-8 py-4 text-lg rounded-2xl',
+  sm: 'px-4 py-2 text-sm rounded-lg',
+  md: 'px-6 py-3 text-base rounded-lg',
+  lg: 'px-8 py-4 text-lg rounded-xl',
 }
 
 export default function Button({

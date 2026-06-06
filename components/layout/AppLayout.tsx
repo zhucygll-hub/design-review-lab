@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white">
+    <div className="min-h-screen bg-[#11100E] text-[#F4EFE6]">
       <TopNav />
       <AnimatePresence mode="wait">
         <motion.main
@@ -32,10 +32,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </motion.main>
       </AnimatePresence>
       <BottomNav />
-      {/* Background ambient glow */}
       <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#4F8CFF]/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#7C3AED]/5 rounded-full blur-[120px]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-[#F4EFE6]/10" />
+        <div className="absolute left-1/2 top-0 h-[32rem] w-[48rem] -translate-x-1/2 rounded-full bg-[#6B9CFF]/6 blur-[140px]" />
       </div>
     </div>
   )

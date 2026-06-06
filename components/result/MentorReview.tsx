@@ -20,17 +20,16 @@ export default function MentorReview({ reviews }: MentorReviewProps) {
   const activeReview = reviews.find((r) => r.role === activeTab)
 
   return (
-    <div className="glass rounded-2xl overflow-hidden">
-      {/* Tabs */}
-      <div className="flex overflow-x-auto border-b border-white/5 scrollbar-none">
+    <div className="report-panel overflow-hidden">
+      <div className="flex overflow-x-auto border-b border-[#F4EFE6]/8 scrollbar-none bg-[#11100E]/38">
         {ROLE_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap transition-all duration-200 border-b-2 -mb-px ${
               activeTab === tab.key
-                ? 'border-[#4F8CFF] text-white'
-                : 'border-transparent text-white/40 hover:text-white/70'
+                ? 'border-[#D6A85A] text-[#F4EFE6]'
+                : 'border-transparent text-[#F4EFE6]/42 hover:text-[#F4EFE6]/72'
             }`}
           >
             <span>{tab.icon}</span>
@@ -51,12 +50,12 @@ export default function MentorReview({ reviews }: MentorReviewProps) {
         >
           {activeReview && (
             <div className="space-y-4">
-              <p className="text-sm text-white/70 leading-relaxed">{activeReview.content}</p>
+              <p className="text-sm text-[#F4EFE6]/68 leading-7">{activeReview.content}</p>
               <div className="flex flex-wrap gap-2">
                 {activeReview.highlights.map((h, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center rounded-full bg-white/5 px-3 py-1 text-xs text-white/50"
+                    className="inline-flex items-center rounded-full border border-[#F4EFE6]/8 bg-[#F4EFE6]/5 px-3 py-1 text-xs text-[#F4EFE6]/50"
                   >
                     {h}
                   </span>

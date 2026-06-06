@@ -76,19 +76,19 @@ export default function RadarChart({ dimensions }: RadarChartProps) {
             key={i}
             d={path}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
+            stroke="rgba(244,239,230,0.08)"
             strokeWidth="1"
           />
         ))}
 
         {/* Axis lines */}
-        <path d={axisLines} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+        <path d={axisLines} stroke="rgba(244,239,230,0.10)" strokeWidth="1" />
 
         {/* Data area */}
         <path
           d={dataPath}
-          fill="rgba(79,140,255,0.12)"
-          stroke="#4F8CFF"
+          fill="rgba(107,156,255,0.12)"
+          stroke="#8EB4FF"
           strokeWidth="1.5"
           style={{
             transition: 'all 1s ease-out',
@@ -106,8 +106,8 @@ export default function RadarChart({ dimensions }: RadarChartProps) {
               cx={x}
               cy={y}
               r={isNA ? 0 : 4}
-              fill={isNA ? 'transparent' : '#4F8CFF'}
-              stroke={isNA ? 'transparent' : '#0A0A0A'}
+              fill={isNA ? 'transparent' : '#8EB4FF'}
+              stroke={isNA ? 'transparent' : '#11100E'}
               strokeWidth="1.5"
               style={{ transition: 'all 1s ease-out' }}
             />
@@ -129,7 +129,7 @@ export default function RadarChart({ dimensions }: RadarChartProps) {
               textAnchor={textAnchor}
               dominantBaseline="middle"
               className="text-[10px]"
-              fill={isNA ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.5)'}
+              fill={isNA ? 'rgba(244,239,230,0.28)' : 'rgba(244,239,230,0.58)'}
             >
               {label}
             </text>
