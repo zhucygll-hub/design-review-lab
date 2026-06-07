@@ -51,6 +51,26 @@ const VISUAL_PATTERNS = [
   /项[目目]/,
   /封[面]/,
   /目[录]/,
+  // Model-specific evidence
+  /体[块量]/,
+  /曲[面线]/,
+  /轮[廓]/,
+  /表[面]/,
+  /接[缝]/,
+  /工[艺]/,
+  /打[样模]/,
+  /制[作]/,
+  /拍[摄]/,
+  /角[度]/,
+  /尺[度寸]/,
+  /展[示]/,
+  /原[型]/,
+  /手[工]/,
+  /3[Dd]/,
+  /CNC/,
+  /打[印]/,
+  /涂[装]/,
+  /喷[漆涂]/,
 ]
 
 // Generic template phrases that indicate lack of visual specificity

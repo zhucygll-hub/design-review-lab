@@ -65,7 +65,7 @@ function compactDetail(dimension: DimensionScore & { score: number }): string {
 function buildFormFocus(workForm: WorkForm, weakName: string): string {
   const map: Record<WorkForm, string> = {
     board: `先重排阅读顺序和图文层级，让${weakName}不再拖慢观看节奏`,
-    physical_model: `先检查比例、结构和材料表达，让${weakName}能被照片直接看出来`,
+    physical_model: `先确保造型比例、结构表达和表面处理清晰可见，让${weakName}不拖累整体形态判断`,
     ui: `先统一关键界面状态和流程反馈，让${weakName}服务于真实使用`,
     poster: `先统一主视觉、字号、留白和色彩关系，让${weakName}变成第一眼优势`,
     packaging_brand: `先收拢品牌调性、字体和图形系统，让${weakName}更像完整方案`,
@@ -74,7 +74,16 @@ function buildFormFocus(workForm: WorkForm, weakName: string): string {
   return map[workForm]
 }
 
-function buildPurposeFocus(reviewPurpose: ReviewPurpose, strongName: string, weakName: string): string {
+function buildPurposeFocus(reviewPurpose: ReviewPurpose, strongName: string, weakName: string, workForm: WorkForm): string {
+  if (workForm === 'physical_model') {
+    const map: Record<ReviewPurpose, string> = {
+      course: `课程作业里可以突出${strongName}的造型判断，同时补充${weakName}对应的制作过程和多角度展示`,
+      competition: `比赛投稿要把${strongName}的形态亮点放到最显眼的位置，同时避免${weakName}削弱评委对造型的判断`,
+      job: `求职展示要讲清${strongName}背后的形态决策，并准备解释${weakName}的改进方向和工艺选择`,
+      practice: `个人练习要记录${strongName}的造型探索过程，再把${weakName}作为下一轮打样或修改的训练目标`,
+    }
+    return map[reviewPurpose]
+  }
   const map: Record<ReviewPurpose, string> = {
     course: `课程作业里可以保留${strongName}，但要补足${weakName}对应的过程依据`,
     competition: `比赛投稿要把${strongName}放到最显眼的位置，同时避免${weakName}削弱评委第一判断`,
@@ -93,7 +102,7 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
   const scenario = `${DESIGN_TYPE_LABELS[input.designType]} / ${WORK_FORM_LABELS[input.workForm]} / ${REVIEW_PURPOSE_LABELS[input.reviewPurpose]}`
   const band = getBand(input.scoreNumeric)
   const formFocus = buildFormFocus(input.workForm, weakest.name)
-  const purposeFocus = buildPurposeFocus(input.reviewPurpose, strongest.name, weakest.name)
+  const purposeFocus = buildPurposeFocus(input.reviewPurpose, strongest.name, weakest.name, input.workForm)
   const seed = hashText(
     [
       input.seedKey,
@@ -112,33 +121,61 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
       ? '概念实验要让探索理由更清楚，不能只停在形式好看。'
       : '商业落地要让价值、对象和执行路径更清楚。'
 
-  const graduationTemplates = [
-    `${scenario}里，${describeDimension(strongest)}是最能支撑成绩的部分；但${describeDimension(weakest)}还不够稳，建议补过程、依据和修改前后对比。`,
-    `从课程导师视角看，这张图的优势在${strongestDetail}，短板集中在${weakestDetail}。下一版先把问题来源讲清楚，再补关键草图或推导证据。`,
-    `这次评审不能只看完成度。${strongest.name}已经能撑住作品方向，但${weakest.name}会影响老师对方法掌握的判断，需要用更明确的过程材料补上。`,
-  ]
+  const isPhysicalModel = input.workForm === 'physical_model'
+
+  const graduationTemplates = isPhysicalModel
+    ? [
+        `从模型照片看，${strongestDetail}体现了造型意识和动手能力，但${weakestDetail}影响了设计的完整表达。建议补充多角度照片、细节特写和尺度参考物来支撑答辩。`,
+        `这个模型的${strongest.name}是亮点，但${weakest.name}会让导师追问制作决策。答辩时需准备：为什么选择这个形态？制作中做了哪些关键取舍？哪些部分是手工/3D打印/CNC？`,
+        `模型实物的${strongestDetail}已能说明设计方向，但仅靠单张照片还不够——建议补充不同角度、细节特写和过程记录，才能在答辩中完整呈现设计思考。`,
+      ]
+    : [
+        `${scenario}里，${describeDimension(strongest)}是最能支撑成绩的部分；但${describeDimension(weakest)}还不够稳，建议补过程、依据和修改前后对比。`,
+        `从课程导师视角看，这张图的优势在${strongestDetail}，短板集中在${weakestDetail}。下一版先把问题来源讲清楚，再补关键草图或推导证据。`,
+        `这次评审不能只看完成度。${strongest.name}已经能撑住作品方向，但${weakest.name}会影响老师对方法掌握的判断，需要用更明确的过程材料补上。`,
+      ]
   const directorTemplates = [
     `目前作品属于${band}状态。${formFocus}，再让${strongest.name}承担主卖点，整体观感会更像一个被设计过的结果。`,
     `设计总监会先看第一眼是否成立：${strongestDetail}是可用资产，但${weakestDetail}会削弱专业感。建议先收拢主视觉和层级，再处理细节。`,
     `这张图不宜平均用力。把${strongest.name}放到视觉中心，同时压掉影响${weakest.name}的杂信息，用户才会更快记住它。`,
   ]
-  const interviewerTemplates = [
-    `${purposeFocus}。面试或展示时不要只说“做了什么”，要说为什么这么判断，以及${secondWeakest.name}下一步怎么迭代。`,
-    `如果把它放进作品集，需要准备一段解释：为什么${strongest.name}这样处理，以及${weakest.name}为什么还没到位。否则面试官会追问决策依据。`,
-    `展示时可以先讲${strongestDetail}，再主动承认${weakestDetail}的不足，并给出下一版动作。这样比只展示成图更可信。`,
-  ]
-  const researchTemplates = [
-    `${conceptPrefix}建议补一句目标受众或观看情境，再用${strongest.name}证明判断，用${weakest.name}暴露的问题反推下一步验证。`,
-    `用户研究视角会问：谁在什么情境下看这张${WORK_FORM_LABELS[input.workForm]}？${middleDetail}可以作为观察点，${weakest.name}则需要更多验证依据。`,
-    `现在的判断更多来自画面本身。建议补充观看对象、传播位置或使用情境，再检查${weakest.name}是否真的服务于这个情境。`,
-  ]
+  const interviewerTemplates = isPhysicalModel
+    ? [
+        `${purposeFocus}。面试时不要只说”做了个模型”，要说为什么选择这个形态、制作中遇到了什么取舍、以及${secondWeakest.name}下一步怎么迭代。`,
+        `如果把这个模型照片放进作品集，需要准备：为什么这样做？比例和形态的决策依据是什么？${weakest.name}为什么是当前这个状态？否则面试官会觉得只有结果没有思考。`,
+        `展示时可以先讲${strongestDetail}的造型逻辑，再主动说明${weakestDetail}在当前版本的限制和下一步改进方向。这种坦诚比只展示完美成图更有说服力。`,
+      ]
+    : [
+        `${purposeFocus}。面试或展示时不要只说”做了什么”，要说为什么这么判断，以及${secondWeakest.name}下一步怎么迭代。`,
+        `如果把它放进作品集，需要准备一段解释：为什么${strongest.name}这样处理，以及${weakest.name}为什么还没到位。否则面试官会追问决策依据。`,
+        `展示时可以先讲${strongestDetail}，再主动承认${weakestDetail}的不足，并给出下一版动作。这样比只展示成图更可信。`,
+      ]
+  const researchTemplates = isPhysicalModel
+    ? [
+        `从模型形态可以推断一些使用线索（体量、比例、握持方式），但照片提供的信息有限。如果这是产品模型，建议补充人机尺度参考和简要使用场景说明。`,
+        `当前照片主要展示造型，无法判断目标用户和使用情境。这不一定有问题——模型实物本来就不需要在一张照片里回答所有问题。如需完整评审，建议搭配展板或设计说明。`,
+        `从体量感和比例关系可以推测大致的使用方式，但目前的照片无法验证。建议在作品集中搭配不同角度、手持对比或环境摆放照片来补充信息。`,
+      ]
+    : [
+        `${conceptPrefix}建议补一句目标受众或观看情境，再用${strongest.name}证明判断，用${weakest.name}暴露的问题反推下一步验证。`,
+        `用户研究视角会问：谁在什么情境下看这张${WORK_FORM_LABELS[input.workForm]}？${middleDetail}可以作为观察点，${weakest.name}则需要更多验证依据。`,
+        `现在的判断更多来自画面本身。建议补充观看对象、传播位置或使用情境，再检查${weakest.name}是否真的服务于这个情境。`,
+      ]
+
+  const graduationHighlights = isPhysicalModel
+    ? [strongest.name, `补多角度展示`]
+    : [strongest.name, `补强${weakest.name}`]
+
+  const researchHighlights = isPhysicalModel
+    ? ['形态可推断的线索', '补充使用场景']
+    : ['明确受众', '补充验证']
 
   const mentorReviews: MentorReview[] = [
     {
       role: 'graduation_tutor',
       roleLabel: '毕业导师',
       content: pickVariant(graduationTemplates, seed, 0),
-      highlights: [strongest.name, `补强${weakest.name}`],
+      highlights: graduationHighlights,
     },
     {
       role: 'design_director',
@@ -156,21 +193,33 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
       role: 'ux_researcher',
       roleLabel: '用户研究员',
       content: pickVariant(researchTemplates, seed, 3),
-      highlights: ['明确受众', '补充验证'],
+      highlights: researchHighlights,
     },
   ]
 
-  const pros = [
-    `${strongest.name}相对突出，能支撑作品的第一层价值`,
-    `${secondWeakest.name === weakest.name ? '整体完成度' : secondWeakest.name}已经有继续深化的基础`,
-    `${WORK_FORM_LABELS[input.workForm]}形式和${REVIEW_PURPOSE_LABELS[input.reviewPurpose]}目标之间有可优化空间`,
-  ]
+  const pros = isPhysicalModel
+    ? [
+        `${strongest.name}相对突出，能支撑作品的核心造型表达`,
+        `${secondWeakest.name === weakest.name ? '整体完成度' : secondWeakest.name}已经有继续深化的基础`,
+        `模型实物形式能直观展示空间思维和动手能力，适合在作品集中作为能力证据`,
+      ]
+    : [
+        `${strongest.name}相对突出，能支撑作品的第一层价值`,
+        `${secondWeakest.name === weakest.name ? '整体完成度' : secondWeakest.name}已经有继续深化的基础`,
+        `${WORK_FORM_LABELS[input.workForm]}形式和${REVIEW_PURPOSE_LABELS[input.reviewPurpose]}目标之间有可优化空间`,
+      ]
 
-  const cons = [
-    `${weakest.name}是当前最明显短板，容易拉低整体判断`,
-    `${secondWeakest.name}还需要更明确的证据、层级或细节支撑`,
-    `作品需要更清楚地说明它为什么适合${scenario}这个场景`,
-  ]
+  const cons = isPhysicalModel
+    ? [
+        `${weakest.name}是当前最明显短板，容易拉低整体判断`,
+        `${secondWeakest.name}还需要更明确的造型处理或工艺提升`,
+        `单张照片的展示方式限制了评审能看到的深度——建议补充多角度照片或搭配展板`,
+      ]
+    : [
+        `${weakest.name}是当前最明显短板，容易拉低整体判断`,
+        `${secondWeakest.name}还需要更明确的证据、层级或细节支撑`,
+        `作品需要更清楚地说明它为什么适合${scenario}这个场景`,
+      ]
 
   const suggestions: Suggestion[] = [
     {
@@ -201,7 +250,9 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
     pros,
     cons,
     suggestions,
-    calibrationNote: `${band}：${strongest.name}较强，但${weakest.name}限制了最终分数。`,
+    calibrationNote: isPhysicalModel
+      ? `${band}：${strongest.name}表现较好，但${weakest.name}和单张照片的展示方式限制了最终分数。`
+      : `${band}：${strongest.name}较强，但${weakest.name}限制了最终分数。`,
   }
 }
 
