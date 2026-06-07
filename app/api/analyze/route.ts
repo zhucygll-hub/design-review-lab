@@ -4,7 +4,7 @@ import { getScoreLabel, normalizeAnalysisResult, numericToScore, getBoundaryProx
 import { fetchArkWithRetry, parseArkError, parseArkJson } from '@/lib/ark-utils'
 import { buildSingleWorkFeedback } from '@/lib/single-work-feedback'
 import { buildSingleWorkWeightTable } from '@/lib/single-work-scenario'
-import { shouldUseAIReviews, validateMentorReviews } from '@/lib/mentor-review-quality'
+import { shouldUseAIReviews, validateMentorReviews, shouldUseAIFeedback, validateFeedbackContent } from '@/lib/mentor-review-quality'
 import {
   AnalysisResult,
   DesignType,
@@ -267,9 +267,42 @@ export async function POST(request: NextRequest) {
     }
 
     // pros/cons/suggestions/calibrationNote: prefer AI, fall back to template
-    rawResult.pros = rawResult.pros ?? generatedFeedback.pros
-    rawResult.cons = rawResult.cons ?? generatedFeedback.cons
-    rawResult.suggestions = rawResult.suggestions ?? generatedFeedback.suggestions
+    // ── Also validate AI-generated pros/cons/suggestions for concreteness ──
+    const aiPros = rawResult.pros
+    const aiCons = rawResult.cons
+    const aiSuggestions = rawResult.suggestions
+    if (aiPros && aiCons && aiSuggestions) {
+      const feedbackCheck = shouldUseAIFeedback(aiPros, aiCons, aiSuggestions)
+      if (feedbackCheck.usable) {
+        const feedbackReport = validateFeedbackContent(aiPros, aiCons, aiSuggestions)
+        rawResult.pros = aiPros
+        rawResult.cons = aiCons
+        rawResult.suggestions = aiSuggestions
+        console.log(
+          `[analyze:${requestId}] AI pros/cons/suggestions accepted (quality=${feedbackReport.score}/100, issues=${feedbackReport.issues.length})`
+        )
+        if (feedbackReport.issues.length > 0) {
+          console.warn(
+            `[analyze:${requestId}] Feedback minor issues:`,
+            feedbackReport.issues.map((i) => i.detail)
+          )
+        }
+      } else {
+        console.warn(
+          `[analyze:${requestId}] AI pros/cons/suggestions rejected: ${feedbackCheck.reason}. Using template fallback.`
+        )
+        rawResult.pros = generatedFeedback.pros
+        rawResult.cons = generatedFeedback.cons
+        rawResult.suggestions = generatedFeedback.suggestions
+      }
+    } else {
+      console.log(
+        `[analyze:${requestId}] AI returned incomplete pros/cons/suggestions, using template fallback`
+      )
+      rawResult.pros = generatedFeedback.pros
+      rawResult.cons = generatedFeedback.cons
+      rawResult.suggestions = generatedFeedback.suggestions
+    }
     rawResult.calibrationNote = rawResult.calibrationNote || generatedFeedback.calibrationNote
 
     const { result, debugInfo } = normalizeAnalysisResult(rawResult as AnalysisResult, { mode: 'single', weightTable })

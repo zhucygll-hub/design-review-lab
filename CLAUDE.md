@@ -222,7 +222,7 @@ ai-portfolio-tutor/
 
 1. **结果页刷新丢失**: 只依赖 sessionStorage，刷新或分享链接会丢失 → 计划 IndexedDB
 2. **作品集稳定性弱于单作品**: 仍要求 AI 一次性返回完整结构，未做"核心JSON+服务端生成"分离
-3. **导师点评由 AI 生成但带模板兜底**: 单作品评审 AI 现在生成 mentorReviews 并经质量校验（`mentor-review-quality.ts`），不合格时回退到 workForm 感知的模板（`single-work-feedback.ts`）。作品集评审同理。
+3. **导师点评由 AI 生成但带模板兜底**: 单作品评审 AI 现在生成 mentorReviews 并经质量校验（`mentor-review-quality.ts`），不合格时回退到 workForm 感知的模板（`single-work-feedback.ts`）。AI 同时生成 pros/cons/suggestions，同样经过具体性校验。作品集评审同理。
 4. **作品集无缩略图**: PDF 无预览图
 5. **lint 未通过**: `set-state-in-effect` 等问题待清理
 6. **AI 评分固有波动**: 视觉模型即使 temp=0/seed=42 也有 ±2-4 分波动，边界线上可能翻档（前端已有边界提示，但需用户理解）

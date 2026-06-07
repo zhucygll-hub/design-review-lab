@@ -8,7 +8,7 @@ import {
   parseArkJson,
 } from '@/lib/ark-utils'
 import { buildPortfolioFeedbackFallback } from '@/lib/single-work-feedback'
-import { shouldUseAIReviews, validateMentorReviews } from '@/lib/mentor-review-quality'
+import { shouldUseAIReviews, validateMentorReviews, shouldUseAIFeedback, validateFeedbackContent } from '@/lib/mentor-review-quality'
 import { AnalysisResult } from '@/types'
 
 export const maxDuration = 120
@@ -201,6 +201,35 @@ export async function POST(request: NextRequest) {
       result.cons = result.cons ?? fallback.cons
       result.suggestions = result.suggestions ?? fallback.suggestions
       result.calibrationNote = result.calibrationNote || fallback.calibrationNote
+    }
+
+    // ── Pros/cons/suggestions quality control ──
+    // Portfolio AI already generates these; validate and fall back if needed.
+    const aiPortfolioPros = result.pros
+    const aiPortfolioCons = result.cons
+    const aiPortfolioSuggestions = result.suggestions
+    if (aiPortfolioPros && aiPortfolioCons && aiPortfolioSuggestions) {
+      const feedbackCheck = shouldUseAIFeedback(aiPortfolioPros, aiPortfolioCons, aiPortfolioSuggestions)
+      if (!feedbackCheck.usable) {
+        console.warn(
+          `[portfolio:${requestId}] AI pros/cons/suggestions rejected: ${feedbackCheck.reason}. Using template fallback.`
+        )
+        const fallback = buildPortfolioFeedbackFallback({
+          dimensions: result.dimensions,
+          scoreNumeric: result.scoreNumeric,
+          targetCompany: result.targetCompany,
+          targetRole: result.targetRole,
+        })
+        // Only override if not already overridden by mentor review fallback
+        if (aiPortfolioPros === result.pros) result.pros = fallback.pros
+        if (aiPortfolioCons === result.cons) result.cons = fallback.cons
+        if (aiPortfolioSuggestions === result.suggestions) result.suggestions = fallback.suggestions
+      } else {
+        const feedbackReport = validateFeedbackContent(aiPortfolioPros, aiPortfolioCons, aiPortfolioSuggestions)
+        console.log(
+          `[portfolio:${requestId}] AI pros/cons/suggestions accepted (quality=${feedbackReport.score}/100, issues=${feedbackReport.issues.length})`
+        )
+      }
     }
 
     result.scoreBreakdown = {

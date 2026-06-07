@@ -130,14 +130,14 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
         `模型实物的${strongestDetail}已能说明设计方向，但仅靠单张照片还不够——建议补充不同角度、细节特写和过程记录，才能在答辩中完整呈现设计思考。`,
       ]
     : [
-        `${scenario}里，${describeDimension(strongest)}是最能支撑成绩的部分；但${describeDimension(weakest)}还不够稳，建议补过程、依据和修改前后对比。`,
-        `从课程导师视角看，这张图的优势在${strongestDetail}，短板集中在${weakestDetail}。下一版先把问题来源讲清楚，再补关键草图或推导证据。`,
-        `这次评审不能只看完成度。${strongest.name}已经能撑住作品方向，但${weakest.name}会影响老师对方法掌握的判断，需要用更明确的过程材料补上。`,
+        `在${scenario}这个场景中，${describeDimension(strongest)}是你最能用来说服评审的部分。但${describeDimension(weakest)}可能被追问——建议补一组过程对比图（原始状态→中间版本→当前版本，3张小图横向排列），让评审看到你是怎么得到当前结果的。`,
+        `从课程导师视角看，这张图强在${strongestDetail}，但${weakestDetail}会成为一个被追问的点。下一版建议在画面空白区域补2-3张关键推导小图，标注关键决策点（为什么选这个方向、放弃过什么方案），让导师能看到你的设计判断过程。`,
+        `这次评审不能只看完成度。${strongest.name}已经能撑住作品方向，但${weakest.name}会让导师质疑你的方法掌握程度。建议补充1-2张过程草图或方案对比，用箭头+简短标注连接从问题到方案的逻辑，放在当前版面的左下或右下空白区。`,
       ]
   const directorTemplates = [
-    `目前作品属于${band}状态。${formFocus}，再让${strongest.name}承担主卖点，整体观感会更像一个被设计过的结果。`,
-    `设计总监会先看第一眼是否成立：${strongestDetail}是可用资产，但${weakestDetail}会削弱专业感。建议先收拢主视觉和层级，再处理细节。`,
-    `这张图不宜平均用力。把${strongest.name}放到视觉中心，同时压掉影响${weakest.name}的杂信息，用户才会更快记住它。`,
+    `目前作品属于${band}状态。${strongestDetail}是画面中最有价值的部分——可以把它作为主视觉锚点，放大到当前尺寸的1.5倍左右，并把${weakest.name}对应区域缩小或移到次要位置，整体节奏会更像经过专业判断的结果。`,
+    `设计总监第一眼看的是视觉是否\"成立\"：${strongestDetail}可以保留，但${weakestDetail}会拉低整体印象。建议先确定一个主导色和辅助色的配比（不是改配色方案，而是控制各色块在画面中的面积比例），再统一${WORK_FORM_LABELS[input.workForm]}中最显眼的3-4个元素的视觉重量。`,
+    `这张图不宜平均用力。把${strongest.name}对应的内容放大到视觉焦点位置，把${weakest.name}的内容缩小或降低对比度，阅读者会在3秒内找到入口。`,
   ]
   const interviewerTemplates = isPhysicalModel
     ? [
@@ -146,9 +146,9 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
         `展示时可以先讲${strongestDetail}的造型逻辑，再主动说明${weakestDetail}在当前版本的限制和下一步改进方向。这种坦诚比只展示完美成图更有说服力。`,
       ]
     : [
-        `${purposeFocus}。面试或展示时不要只说”做了什么”，要说为什么这么判断，以及${secondWeakest.name}下一步怎么迭代。`,
-        `如果把它放进作品集，需要准备一段解释：为什么${strongest.name}这样处理，以及${weakest.name}为什么还没到位。否则面试官会追问决策依据。`,
-        `展示时可以先讲${strongestDetail}，再主动承认${weakestDetail}的不足，并给出下一版动作。这样比只展示成图更可信。`,
+        `${purposeFocus}。面试时要讲三个层次：看到了什么问题→尝试了哪些方向→为什么选了当前方案。把${strongest.name}的决策过程变成故事，把${secondWeakest.name}的不足变成”下一版计划”——面试官更看重思考路径而非完美结果。`,
+        `如果把它放进作品集，需要配一段简短说明：当时为什么选择${strongest.name}这个处理方式，以及${weakest.name}为什么暂时是这个状态。不要只放成图——在图片旁边用3-4行文字标注关键决策点，面试时就能直接指着讲。`,
+        `展示时可以先讲${strongestDetail}的优点和它的决策逻辑，再主动说明${weakestDetail}在哪些条件限制下达成了当前版本、下一步会怎么调整。提前准备一个”如果重来我会怎么改”的回答。`,
       ]
   const researchTemplates = isPhysicalModel
     ? [
@@ -157,9 +157,9 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
         `从体量感和比例关系可以推测大致的使用方式，但目前的照片无法验证。建议在作品集中搭配不同角度、手持对比或环境摆放照片来补充信息。`,
       ]
     : [
-        `${conceptPrefix}建议补一句目标受众或观看情境，再用${strongest.name}证明判断，用${weakest.name}暴露的问题反推下一步验证。`,
-        `用户研究视角会问：谁在什么情境下看这张${WORK_FORM_LABELS[input.workForm]}？${middleDetail}可以作为观察点，${weakest.name}则需要更多验证依据。`,
-        `现在的判断更多来自画面本身。建议补充观看对象、传播位置或使用情境，再检查${weakest.name}是否真的服务于这个情境。`,
+        `${conceptPrefix}建议在画面中或作品说明里补充一句：这个设计是为谁在什么场景下使用的？然后用${strongest.name}作为你已经做到了的证据，用${weakest.name}暴露的问题来反推下一轮要验证什么。`,
+        `用户研究视角会追问：谁在什么情境下看这张${WORK_FORM_LABELS[input.workForm]}？${middleDetail}目前是画面中可以支撑回答的部分，但${weakest.name}在没有受众信息的情况下难以判断是否合理——建议补充目标受众和使用场景的简短标注。`,
+        `目前的分析只能基于画面本身。如果这是实际项目，建议在画面角落或说明文字中标注：目标受众是谁、观看距离/场景是什么。然后回头检查${weakest.name}是否真的服务于这个场景。`,
       ]
 
   const graduationHighlights = isPhysicalModel
@@ -200,25 +200,25 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
   const pros = isPhysicalModel
     ? [
         `${strongest.name}相对突出，能支撑作品的核心造型表达`,
-        `${secondWeakest.name === weakest.name ? '整体完成度' : secondWeakest.name}已经有继续深化的基础`,
-        `模型实物形式能直观展示空间思维和动手能力，适合在作品集中作为能力证据`,
+        `${secondWeakest.name === weakest.name ? '模型整体完成度' : secondWeakest.name}已有继续深化的基础——可尝试不同的表面处理或展示角度`,
+        `模型实物形式能直观展示空间思维和动手能力，在作品集中搭配展板使用效果更好`,
       ]
     : [
-        `${strongest.name}相对突出，能支撑作品的第一层价值`,
-        `${secondWeakest.name === weakest.name ? '整体完成度' : secondWeakest.name}已经有继续深化的基础`,
-        `${WORK_FORM_LABELS[input.workForm]}形式和${REVIEW_PURPOSE_LABELS[input.reviewPurpose]}目标之间有可优化空间`,
+        `${strongest.name}在画面中有可见的表现，已经构成了作品的核心说服力——可以在这个方向继续深入`,
+        `${secondWeakest.name === weakest.name ? '整体完成度' : secondWeakest.name}已经达到可用状态，不需要从零重做，而是需要局部调整`,
+        `选择了${WORK_FORM_LABELS[input.workForm]}形式来表达这个${DESIGN_TYPE_LABELS[input.designType]}项目，这个载体本身是合适的选择`,
       ]
 
   const cons = isPhysicalModel
     ? [
-        `${weakest.name}是当前最明显短板，容易拉低整体判断`,
-        `${secondWeakest.name}还需要更明确的造型处理或工艺提升`,
-        `单张照片的展示方式限制了评审能看到的深度——建议补充多角度照片或搭配展板`,
+        `${weakest.name}在照片中表现不足——可能是制作本身的问题，也可能是展示方式没拍出来。建议补拍${weakest.name}相关的细节特写`,
+        `${secondWeakest.name}还有提升空间：可以从造型比例、表面处理或展示角度中选择一个最影响观感的方面优先调整`,
+        `单张照片只能展示一个角度，限制了评审能看到的深度——至少补充正面/侧面/细节三张图`,
       ]
     : [
-        `${weakest.name}是当前最明显短板，容易拉低整体判断`,
-        `${secondWeakest.name}还需要更明确的证据、层级或细节支撑`,
-        `作品需要更清楚地说明它为什么适合${scenario}这个场景`,
+        `${weakest.name}在画面中的处理方式（大小、位置、精细度）目前不够突出——可以从这个角度优先调整`,
+        `${secondWeakest.name}的处理还有提升空间：建议对比同类型优秀作品在这一点上的做法，然后有针对性地修改`,
+        `作品在画面组织上还可以更清晰：读者目前可能需要花时间找到重点，重新安排各元素的视觉权重可以解决这个问题`,
       ]
 
   const suggestions: Suggestion[] = [

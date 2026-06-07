@@ -151,9 +151,12 @@ function getRedFlagDescription(flagName: string): string {
 // ============================================================
 
 function buildMentorReviewGuide(workForm: WorkForm): string {
-  const commonIntro = `必须基于你看到的画面内容，为四位不同视角的导师各写一段点评。每位导师点评必须包含：
-1. 至少 1 个从画面中直接观察到的具体证据（不许凭空编造）
-2. 基于该证据给出该角色视角的专业判断`
+  const commonIntro = `每位导师点评必须按以下三步结构写：
+① 观察到画面中什么具体元素（位置、颜色、形状、文字、材质——不许编造）
+② 这个观察从该导师视角说明了什么专业判断
+③ 一个具体的、可执行的修改动作（说明放在哪里、用什么形式）
+
+格式近似："画面中XX的处理导致了YY。这说明ZZ。建议做AA（放在BB位置/用CC形式）。"`
 
   const formGuides: Record<WorkForm, string> = {
     board: `${commonIntro}
@@ -386,6 +389,77 @@ ${cond5}`
 }
 
 // ============================================================
+// Concrete output requirements — shared across all sections
+// ============================================================
+
+function buildConcreteOutputRequirements(workForm: WorkForm): string {
+  const modelExtra = workForm === 'physical_model'
+    ? '- 禁止写"缺少用户调研"、"缺少概念推导"、"缺少问题定义"等不可见内容的评价\n'
+    : ''
+
+  return `============================================================
+输出具体性要求（极其重要——这是评审是否有用的核心）
+============================================================
+
+用户打开评审报告是为了知道"具体改哪里、怎么改、为什么这样改"。
+不满足以下要求的评审是无效的。
+
+【禁止的抽象表达】
+以下措辞不能单独作为评价或建议出现。如果使用，后面必须立刻解释"具体指画面中哪个元素"和"怎么做"：
+禁止：「加强/提升/优化/增强/丰富/完善/深化/改进」+ 抽象名词
+禁止：「更明确的证据/支撑/表达/细节」
+禁止：「XX存在不足/有待提高/还需打磨」
+禁止：「建议进一步XX」
+禁止：「整体表现一般/仍有改进空间」
+
+【维度 description 规范】
+每个维度 description 必须指出：画面中具体哪个元素或处理方式导致了该分数。
+允许（仅示例，根据实际画面写）：
+"三张渲染图的光影一致，排版秩序感强"
+"标题与正文字号太接近，读者分不清信息优先级"
+不允许：
+"完成度较高，细节处理到位"
+"视觉表达还需加强"
+
+【导师点评规范：三步结构】
+每位导师点评必须按三步组织，缺一不可：
+① 观察到什么：从画面中引用至少一个具体元素（位置、颜色、形状、文字、材质——根据当前作品形式选择相关的）
+② 判断了什么：基于该导师视角，这个观察说明了什么
+③ 怎么改：一个具体的、可执行的修改动作，说明放在哪里或用什么形式
+
+【优点（pros）规范】
+每条优点必须指向画面中一个可看见的具体元素或处理方式。
+允许："产品渲染图的光影处理拉开了前景与背景的层级"
+不允许："视觉表达相对突出"
+
+【改进空间（cons）规范】
+每条缺点必须包含：画面中哪个具体元素/处理有问题 + 为什么它影响评分或观感。
+允许："展板上三张辅图尺寸完全一致，观众不知道该先看哪张"
+不允许："创新与概念需要更明确的证据支撑"
+
+【建议（suggestions）规范】
+每条建议必须包含四个要素：
+① 针对什么：画面中哪个具体元素或处理
+② 为什么：它如何影响了评分或观感
+③ 怎么改：具体的操作动词（删、加、调大小、移位置、替换、重排、统一、标注——必须用动词）
+④ 放哪里/什么形式（如适用）
+
+允许（仅示例，根据实际画面写）：
+"把主效果图放大到版面60%宽，两张辅助图缩小到30%并排放在下方，形成F型阅读路径"
+不允许：
+"优化展板的图文层级"
+"建议加强视觉表达"
+
+============================================================
+【以上所有例句仅用于说明"具体到什么程度"。
+你必须根据当前作品的实际画面内容来写，不能照抄任何一句例句。
+画面中没有渲染图就不要提渲染图，画面中有手绘草图就从手绘草图说起。】
+============================================================
+
+${modelExtra}`
+}
+
+// ============================================================
 // Dynamic system prompt builder
 // ============================================================
 
@@ -400,7 +474,6 @@ function buildSystemPrompt(
   // Dimension definitions (dynamic)
   const dimensionDefs = dimensions
     .map((d, i) => {
-      // Adapt dimension 7 definition for concept
       let desc = d.description
       if (i === 6 && isConcept) {
         desc = '思想深度、边界探索、实验性价值。注：这是概念设计，不需要评估市场可行性或落地性。'
@@ -416,6 +489,7 @@ function buildSystemPrompt(
   const visualEvidence = buildVisualEvidenceTypes(workForm)
   const highScoreConstraints = buildHighScoreConstraints(workForm)
   const sTierConditions = buildSTierConditions(designType, workForm)
+  const concreteReqs = buildConcreteOutputRequirements(workForm)
 
   // "visible evidence only" reinforcement for physical_model
   const visibleEvidenceRule = workForm === 'physical_model'
@@ -439,14 +513,25 @@ function buildSystemPrompt(
     { "role": "design_director", "roleLabel": "设计总监", "content": "150字以内点评", "highlights": ["要点1","要点2"] },
     { "role": "interviewer", "roleLabel": "企业面试官", "content": "150字以内点评", "highlights": ["要点1","要点2"] },
     { "role": "ux_researcher", "roleLabel": "用户研究员", "content": "150字以内点评", "highlights": ["要点1","要点2"] }
+  ],
+  "pros": ["优点1", "优点2", "优点3"],
+  "cons": ["缺点1", "缺点2", "缺点3"],
+  "suggestions": [
+    { "id": "s1", "type": "priority", "content": "优先修改建议", "effort": "medium", "impact": "high" },
+    { "id": "s2", "type": "priority", "content": "次要修改建议", "effort": "medium", "impact": "high" },
+    { "id": "s3", "type": "quick_fix", "content": "快速改进", "effort": "low", "impact": "medium" }
   ]
 }
 
-输出要求：
-- 每个维度 description 不超过 20 个汉字
-- calibrationNote 不超过 50 个汉字
-- 每个导师 content 约 80-150 汉字，highlights 固定 2 条
+输出格式要求：
+- 每个维度 description 不超过 20 汉字（必须指出画面中具体哪个元素导致了该分数）
+- calibrationNote 不超过 50 汉字
+- 每个导师 content 80-150 汉字，highlights 固定 2 条
+- pros/cons 各 3 条，每条不超过 60 汉字
+- suggestions 固定 3 条，每条 content 不超过 80 汉字
 - 只输出合法 JSON，不要输出分析过程
+
+${concreteReqs}
 
 ============================================================
 ${workFormGuide}
@@ -520,22 +605,21 @@ calibrationNote 填写指南：
 
 calibrationNote 必须用中文填写，解释为什么该作品属于当前等级区间。格式示例：
 "该作品视觉完成度较高，达到校级优秀水准，但概念深度和行业创新性不足，因此限制在 A 档 82-87 区间。"
-"该作品在概念完整度、叙事逻辑、视觉表达和现实价值上均达到国际竞赛级水准，因此进入 S 档。"
 
 ============================================================
-第5步：生成四位导师点评（mentorReviews）
+第5步：生成导师点评、优点、缺点、建议
 ============================================================
 
 ${mentorGuide}
 
-画面证据类型参考（必须选择实际看到的来写，不要编造不存在的内容）：
+画面证据类型参考（必须选择实际看到的来写，不要编造）：
 ${visualEvidence}
 
 禁止事项：
 - 禁止四位导师写相似内容（必须各有不同角度）
-- 禁止写"加强XX"、"提升XX"、"继续深化"等空泛建议而不说具体怎么改
+- 禁止写"加强XX"、"提升XX"、"优化XX"等空泛建议而不说具体怎么改
 - 禁止没有画面证据的泛泛而谈
-- 禁止套用任何模板句式
+- 禁止套用任何句式模板
 ${workForm === 'physical_model' ? '- 禁止写"缺少用户调研"、"缺少概念推导"、"缺少问题定义"等不可见内容的评价' : ''}
 
 ============================================================
@@ -585,11 +669,13 @@ ${dimensionList}
 ${dimensionJson}
 ]
 
-请严格按上方系统提示中的作品形式评价标准来评估，不要套用不相关场景的标准。`
+请严格按上方系统提示中的作品形式评价标准和输出具体性要求来评估。
+所有输出字段（dimensions、mentorReviews、pros、cons、suggestions）都必须引用画面具体证据，
+不得写抽象空话。只返回 JSON，不要其他文字。`
 
   let user = `${scenarioInstruction}
 
-请严格按照评分流程（确认形式→红牌检查→维度评分→等级判定→calibrationNote→mentorReviews），逐维度分析并生成四位导师点评。注意：mentorReviews 中每位导师必须引用画面具体证据，不得写泛泛而谈的模板话。只返回 JSON，不要其他文字。`
+请严格按照评分流程（确认形式→红牌检查→维度评分→等级判定→calibrationNote→mentorReviews→pros→cons→suggestions）进行分析。只返回 JSON，不要其他文字。`
 
   if (isConcept) {
     user = '用户已将此作品标记为"概念设计"。请从概念设计的角度评估：关注思想深度、原创性、设计边界的探索，而非市场可行性或商业落地性。\n\n' + user
