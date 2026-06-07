@@ -16,18 +16,18 @@ function getScoreReason(result: AnalysisResult) {
   const breakdown = result.scoreBreakdown
 
   if (!breakdown) {
-    return '本次结果以七个维度的综合表现为基础，结合 AI 对画面问题的判断给出最终等级。'
+    return '本次结果以七个维度的综合表现为基础，结合对画面问题的判断给出最终等级。'
   }
 
   if (breakdown.wasRedFlagCapped) {
-    return `七维原始加权分为 ${breakdown.rawWeightedScore}，但触发 ${breakdown.redFlagCount} 条红牌问题，最终分数被校准到 ${breakdown.afterCalibration}。`
+    return `虽然部分维度表现不错（基础分 ${breakdown.rawWeightedScore}），但作品存在 ${breakdown.redFlagCount} 个会影响整体成立的核心问题（硬伤），因此最终等级被限制在对应上限（最终分 ${breakdown.afterCalibration}）。优先解决这些硬伤，比继续打磨细节更重要。`
   }
 
   if (breakdown.wasHighScoreCalibrated) {
-    return `七维原始加权分为 ${breakdown.rawWeightedScore}，系统根据高分门槛做了二次校准，最终分数为 ${breakdown.afterCalibration}。`
+    return `作品基础分 ${breakdown.rawWeightedScore} 属于不错的水准，但高等级作品需要多个维度同时稳定——尤其是视觉表达、概念清晰度、完成度不能有明显短板。当前还缺少一些条件，因此最终分数被调整到 ${breakdown.afterCalibration}。把短板补上比继续拉长板更有效。`
   }
 
-  return `未触发红牌封顶或高分校准，最终分数主要来自七维加权结果：${breakdown.rawWeightedScore}。`
+  return `这次评审没有触发硬伤限制或高分门槛，最终分数基本等于七个维度的综合基础分（${breakdown.rawWeightedScore}）。`
 }
 
 export default function ResultInsightPanel({ result }: ResultInsightPanelProps) {

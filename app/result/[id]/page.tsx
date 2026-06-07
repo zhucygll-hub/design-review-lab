@@ -133,12 +133,12 @@ export default function ResultPage() {
         <section className="report-panel p-6">
           <h2 className="report-title text-lg">评分依据</h2>
           <p className="mt-1 text-sm text-[#F4EFE6]/45">
-            这里解释为什么最终分数可能低于七维加权分。
+            为什么是这个分数？下面解释作品的基础分是如何得出的，以及最终分数经过了哪些考量。
           </p>
 
           {/* Raw weighted score */}
           <div className="mt-5 flex items-center justify-between rounded-xl bg-[#11100E]/60 px-4 py-3">
-            <span className="text-sm text-[#F4EFE6]/54">七维加权原始分</span>
+            <span className="text-sm text-[#F4EFE6]/54">基础分（维度综合）</span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-mono text-[#F4EFE6]/76">
                 {result.scoreBreakdown.rawWeightedScore} 分
@@ -149,7 +149,7 @@ export default function ResultPage() {
             </div>
           </div>
 
-          {/* Red flag cap */}
+          {/* Hard injury check (red flag cap) */}
           {result.scoreBreakdown.wasRedFlagCapped && (
             <div className="mt-4 space-y-3 rounded-xl border border-[#E45A4F]/18 bg-[#E45A4F]/6 p-4">
               <div className="flex items-center gap-2">
@@ -159,12 +159,16 @@ export default function ResultPage() {
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
                 <span className="text-sm font-semibold text-[#E45A4F]">
-                  触发红牌封顶规则
+                  硬伤检查（等级上限限制）
                 </span>
                 <span className="text-[11px] text-[#E45A4F]/65 ml-auto">
-                  {result.scoreBreakdown.redFlagCount} 条
+                  {result.scoreBreakdown.redFlagCount} 项
                 </span>
               </div>
+
+              <p className="text-xs text-[#F4EFE6]/46 leading-relaxed">
+                硬伤是指会严重影响作品整体成立的核心问题——例如主题不清、主视觉混乱、信息无法阅读、完成度明显不足等。一旦出现这类问题，即使某些维度表现不错，最终等级也必须限制在对应上限以内。优先处理这些硬伤，比继续优化细节更重要。
+              </p>
 
               <ul className="space-y-1.5">
                 {result.redFlags.map((flag, i) => (
@@ -178,16 +182,16 @@ export default function ResultPage() {
               <div className="pt-2 border-t border-[#E45A4F]/12">
                 <p className="text-xs text-[#F4EFE6]/46 leading-relaxed">
                   {result.scoreBreakdown.redFlagCount >= 3
-                    ? '≥3 条红牌 → 总分上限强制封顶至 59 分（E 级），无论维度分数如何。'
+                    ? '出现 3 项或以上硬伤：无论维度表现如何，最终等级最高为 E 档（59 分以下）。'
                     : result.scoreBreakdown.redFlagCount >= 2
-                      ? '≥2 条红牌 → 总分上限强制封顶至 69 分（D 级），无论维度分数如何。'
-                      : '≥1 条红牌 → 总分上限强制封顶至 79 分（C 级），无论维度分数如何。'}
+                      ? '出现 2 项硬伤：无论维度表现如何，最终等级最高为 D 档（69 分以下）。'
+                      : '出现 1 项硬伤：无论维度表现如何，最终等级最高为 C 档（79 分以下）。'}
                 </p>
               </div>
 
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1 text-center py-2 rounded-lg bg-[#11100E]/48">
-                  <div className="text-[11px] text-[#F4EFE6]/30 mb-0.5">原始加权</div>
+                  <div className="text-[11px] text-[#F4EFE6]/30 mb-0.5">基础分</div>
                   <div className="text-sm font-mono text-[#F4EFE6]/52">
                     {result.scoreBreakdown.rawWeightedScore}
                   </div>
@@ -197,7 +201,7 @@ export default function ResultPage() {
                   <polyline points="12 5 19 12 12 19" />
                 </svg>
                 <div className="flex-1 text-center py-2 rounded-lg bg-[#E45A4F]/8 border border-[#E45A4F]/14">
-                  <div className="text-[11px] text-[#E45A4F]/65 mb-0.5">封顶后（最终）</div>
+                  <div className="text-[11px] text-[#E45A4F]/65 mb-0.5">最终评审分</div>
                   <div className="text-sm font-mono font-semibold text-[#E45A4F]">
                     {result.scoreBreakdown.afterRedFlagCap}
                   </div>
@@ -206,7 +210,7 @@ export default function ResultPage() {
             </div>
           )}
 
-          {/* High score calibration (no red flag cap) */}
+          {/* High score gate */}
           {result.scoreBreakdown.wasHighScoreCalibrated && !result.scoreBreakdown.wasRedFlagCapped && (
             <div className="mt-4 p-4 rounded-xl bg-[#6B9CFF]/6 border border-[#6B9CFF]/18">
               <div className="flex items-center gap-2 mb-2">
@@ -215,15 +219,14 @@ export default function ResultPage() {
                   <line x1="12" y1="16" x2="12" y2="12" />
                   <line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
-                <span className="text-sm font-semibold text-[#8EB4FF]">高分校准已触发</span>
+                <span className="text-sm font-semibold text-[#8EB4FF]">高分门槛</span>
               </div>
               <p className="text-xs text-[#F4EFE6]/48 leading-relaxed">
-                根据评分体系严格校准规则（视觉表达门槛、强维度数量、弱维度限制等），
-                系统进行了二次校准以确保评分一致性。
+                高等级作品不能只靠某一项拉分。A 或 S 级作品需要多个维度同时稳定——尤其是视觉表达、概念清晰度、完成度不能有明显短板。当前作品还没有完全达到这些条件，因此最终分数做了相应调整。把短板补上比继续拉长板更有效。
               </p>
               <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#6B9CFF]/12">
                 <div className="flex-1 text-center py-2 rounded-lg bg-[#11100E]/48">
-                  <div className="text-[11px] text-[#F4EFE6]/30 mb-0.5">加权原始</div>
+                  <div className="text-[11px] text-[#F4EFE6]/30 mb-0.5">基础分</div>
                   <div className="text-sm font-mono text-[#F4EFE6]/52">
                     {result.scoreBreakdown.rawWeightedScore}
                   </div>
@@ -233,7 +236,7 @@ export default function ResultPage() {
                   <polyline points="12 5 19 12 12 19" />
                 </svg>
                 <div className="flex-1 text-center py-2 rounded-lg bg-[#6B9CFF]/8 border border-[#6B9CFF]/14">
-                  <div className="text-[11px] text-[#8EB4FF]/65 mb-0.5">校准后</div>
+                  <div className="text-[11px] text-[#8EB4FF]/65 mb-0.5">最终评审分</div>
                   <div className="text-sm font-mono font-semibold text-[#8EB4FF]">
                     {result.scoreBreakdown.afterCalibration}
                   </div>
@@ -248,7 +251,7 @@ export default function ResultPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              未触发红牌封顶或高分校准，最终得分为七维加权计算结果
+              这次评审没有发现会限制等级的硬伤，也没有触发高分门槛，最终分数基本等于基础分。
             </div>
           )}
 
@@ -265,8 +268,7 @@ export default function ResultPage() {
                   该分数接近 {result.scoreBreakdown.boundaryProximity} 等级边界
                 </span>
                 <p className="text-xs text-[#F4EFE6]/42 mt-0.5 leading-relaxed">
-                  由于 AI 视觉模型即使在固定种子下也存在 ±2-4 分的正常评分波动，
-                  同一作品在不同次分析中可能在相邻档位间变化。这不是系统计算错误。
+                  该分数落在两个等级的交界附近。类似水平的作品在不同评审中可能被归入相邻档位——建议更关注具体维度的短板和点评建议，而不是只看字母等级。
                 </p>
               </div>
             </div>
@@ -275,7 +277,7 @@ export default function ResultPage() {
           {/* AI calibration note */}
           {result.calibrationNote && (
             <div className="mt-4 p-3 rounded-lg bg-[#11100E]/48 border border-[#F4EFE6]/7">
-              <p className="text-[11px] text-[#F4EFE6]/32 mb-1">AI 评审备注</p>
+              <p className="text-[11px] text-[#F4EFE6]/32 mb-1">评审备注</p>
               <p className="text-xs text-[#F4EFE6]/48 leading-relaxed">{result.calibrationNote}</p>
             </div>
           )}

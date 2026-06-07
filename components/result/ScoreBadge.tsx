@@ -32,7 +32,7 @@ export default function ScoreBadge({ score, scoreLabel, scoreNumeric }: ScoreBad
             </div>
           </div>
           <p className="mt-6 max-w-xl text-sm leading-6 text-[#F4EFE6]/56">
-            总评不是七个数字的简单平均。系统会先按权重计算，再根据红牌问题和高分门槛做校准。
+            总评不是七个数字的简单平均。系统会先按维度权重综合计算基础分，再检查是否有拉低整体水平的硬伤，以及是否达到高等级作品应有的稳定性。
           </p>
         </div>
 
