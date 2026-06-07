@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from 'react'
 import { AnalysisResult } from '@/types'
 import { parseApiResponse } from '@/lib/api-utils'
 import { assessPdfSize, pdfPagesToImages } from '@/lib/pdf-to-images'
+import { buildPortfolioProgressSteps } from '@/lib/analysis-progress'
 
 interface PortfolioUploadState {
   file: File | null
@@ -20,15 +21,7 @@ interface PortfolioUploadState {
   error: string | null
 }
 
-const PORTFOLIO_DIMENSIONS = [
-  '项目质量',
-  '项目完整度',
-  '设计思维',
-  '专业能力',
-  '视觉表达能力',
-  '差异化竞争力',
-  '岗位匹配度',
-]
+const PORTFOLIO_STEPS = buildPortfolioProgressSteps()
 
 /** Timeout for client-side PDF rendering (30s) */
 const PDF_PROCESSING_TIMEOUT_MS = 30_000
@@ -211,22 +204,22 @@ export function usePortfolioAnalysis() {
         signal: controller.signal,
       }).finally(() => clearTimeout(clientTimeout))
 
-      // Animate dimensions 1-6 (~6s)
+      // Animate review steps 1-6 (~6s)
       const maxAnimationProgress = 90
-      for (let i = 0; i < PORTFOLIO_DIMENSIONS.length - 1; i++) {
-        const dim = PORTFOLIO_DIMENSIONS[i]
+      for (let i = 0; i < PORTFOLIO_STEPS.length - 1; i++) {
+        const step = PORTFOLIO_STEPS[i]
         setUpload((prev) => ({
           ...prev,
-          currentDimension: dim,
-          progress: Math.round(((i + 0.5) / PORTFOLIO_DIMENSIONS.length) * maxAnimationProgress),
+          currentDimension: step.label,
+          progress: Math.round(((i + 0.5) / PORTFOLIO_STEPS.length) * maxAnimationProgress),
         }))
 
         await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 300))
 
         setUpload((prev) => ({
           ...prev,
-          completedDimensions: [...prev.completedDimensions, dim],
-          progress: Math.round(((i + 1) / PORTFOLIO_DIMENSIONS.length) * maxAnimationProgress),
+          completedDimensions: [...prev.completedDimensions, step.label],
+          progress: Math.round(((i + 1) / PORTFOLIO_STEPS.length) * maxAnimationProgress),
         }))
       }
 
@@ -245,14 +238,14 @@ export function usePortfolioAnalysis() {
       setUpload((prev) => ({
         ...prev,
         isAwaitingTargetInput: false,
-        currentDimension: PORTFOLIO_DIMENSIONS[6],
+        currentDimension: PORTFOLIO_STEPS[6].label,
       }))
 
       // Animate dimension 7
       await new Promise((resolve) => setTimeout(resolve, 600))
       setUpload((prev) => ({
         ...prev,
-        completedDimensions: [...prev.completedDimensions, PORTFOLIO_DIMENSIONS[6]],
+        completedDimensions: [...prev.completedDimensions, PORTFOLIO_STEPS[6].label],
         progress: maxAnimationProgress,
       }))
 

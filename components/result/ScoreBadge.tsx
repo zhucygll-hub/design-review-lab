@@ -1,5 +1,6 @@
 'use client'
 
+import { ReactNode, useState } from 'react'
 import { motion } from 'framer-motion'
 import { getScoreColor } from '@/lib/utils'
 
@@ -7,10 +8,12 @@ interface ScoreBadgeProps {
   score: string
   scoreLabel: string
   scoreNumeric: number
+  evidence?: ReactNode
 }
 
-export default function ScoreBadge({ score, scoreLabel, scoreNumeric }: ScoreBadgeProps) {
+export default function ScoreBadge({ score, scoreLabel, scoreNumeric, evidence }: ScoreBadgeProps) {
   const color = getScoreColor(score)
+  const [showEvidence, setShowEvidence] = useState(false)
 
   return (
     <motion.div
@@ -19,10 +22,10 @@ export default function ScoreBadge({ score, scoreLabel, scoreNumeric }: ScoreBad
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="report-panel overflow-hidden"
     >
-      <div className="grid gap-0 md:grid-cols-[1fr_220px]">
+      <div className="grid gap-0 md:grid-cols-[1fr_240px]">
         <div className="p-6 md:p-8">
           <p className="report-kicker">综合评分</p>
-          <div className="mt-5 flex items-end gap-4">
+          <div className="mt-5 flex flex-wrap items-end gap-4">
             <span className="text-7xl font-semibold tracking-[-0.04em]" style={{ color }}>
               {score}
             </span>
@@ -32,8 +35,31 @@ export default function ScoreBadge({ score, scoreLabel, scoreNumeric }: ScoreBad
             </div>
           </div>
           <p className="mt-6 max-w-xl text-sm leading-6 text-[#F4EFE6]/56">
-            总评不是七个数字的简单平均。系统会先按维度权重综合计算基础分，再检查是否有拉低整体水平的硬伤，以及是否达到高等级作品应有的稳定性。
+            总评不是七个数字的简单平均。系统会先计算基础分，再检查是否存在硬伤，以及是否达到高等级作品应有的稳定性。
           </p>
+
+          {evidence && (
+            <button
+              type="button"
+              onClick={() => setShowEvidence((value) => !value)}
+              className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#F4EFE6]/12 px-3 py-1.5 text-xs font-medium text-[#F4EFE6]/64 transition-colors hover:border-[#F4EFE6]/24 hover:text-[#F4EFE6]"
+            >
+              {showEvidence ? '收起评分依据' : '查看评分依据'}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform ${showEvidence ? 'rotate-180' : ''}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          )}
         </div>
 
         <div className="border-t border-[#F4EFE6]/8 bg-[#11100E]/58 p-6 md:border-l md:border-t-0">
@@ -49,11 +75,13 @@ export default function ScoreBadge({ score, scoreLabel, scoreNumeric }: ScoreBad
             </div>
             <div className="h-px bg-[#F4EFE6]/8" />
             <p className="text-xs leading-5 text-[#F4EFE6]/42">
-              低分会优先解释短板和封顶原因，方便判断下一版应该先改哪里。
+              先看最大问题和优先修改项，再看完整维度。分数只是入口，具体问题才决定下一版怎么改。
             </p>
           </div>
         </div>
       </div>
+
+      {showEvidence && evidence}
     </motion.div>
   )
 }

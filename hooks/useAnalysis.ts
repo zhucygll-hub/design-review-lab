@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { AnalysisResult, DesignType, ReviewPurpose, WorkForm } from '@/types'
 import { parseApiResponse } from '@/lib/api-utils'
 import { compressImageClient } from '@/lib/image-compress'
-import { buildSingleWorkDimensions } from '@/lib/single-work-scenario'
+import { buildSingleWorkProgressSteps } from '@/lib/analysis-progress'
 
 interface UploadState {
   file: File | null
@@ -113,27 +113,27 @@ export function useAnalysis() {
         signal: controller.signal,
       }).finally(() => clearTimeout(clientTimeout))
 
-      // Run dimension animation (capped at 90%)
-      const analysisDimensions = buildSingleWorkDimensions(
+      // Run scenario-aware progress animation (capped at 90%)
+      const analysisSteps = buildSingleWorkProgressSteps(
         upload.designType,
         upload.workForm,
         upload.reviewPurpose
-      ).map((d) => d.name)
+      )
       const maxAnimationProgress = 90
-      for (let i = 0; i < analysisDimensions.length; i++) {
-        const dim = analysisDimensions[i]
+      for (let i = 0; i < analysisSteps.length; i++) {
+        const step = analysisSteps[i]
         setUpload((prev) => ({
           ...prev,
-          currentDimension: dim,
-          progress: Math.round(((i + 0.5) / analysisDimensions.length) * maxAnimationProgress),
+          currentDimension: step.label,
+          progress: Math.round(((i + 0.5) / analysisSteps.length) * maxAnimationProgress),
         }))
 
         await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 300))
 
         setUpload((prev) => ({
           ...prev,
-          completedDimensions: [...prev.completedDimensions, dim],
-          progress: Math.round(((i + 1) / analysisDimensions.length) * maxAnimationProgress),
+          completedDimensions: [...prev.completedDimensions, step.label],
+          progress: Math.round(((i + 1) / analysisSteps.length) * maxAnimationProgress),
         }))
       }
 
