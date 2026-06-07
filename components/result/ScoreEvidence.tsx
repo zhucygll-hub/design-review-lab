@@ -21,7 +21,7 @@ export default function ScoreEvidence({ result }: ScoreEvidenceProps) {
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/55 p-4">
+        <div className="rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/45 p-4">
           <p className="text-xs text-[#F4EFE6]/38">基础分</p>
           <div className="mt-2 flex items-end justify-between gap-3">
             <span className="font-mono text-2xl font-semibold text-[#F4EFE6]">
@@ -55,7 +55,7 @@ export default function ScoreEvidence({ result }: ScoreEvidenceProps) {
         <div className={`rounded-xl border p-4 ${
           breakdown.wasHighScoreCalibrated
             ? 'border-[#6B9CFF]/20 bg-[#6B9CFF]/7'
-            : 'border-[#F4EFE6]/10 bg-[#11100E]/55'
+            : 'border-[#F4EFE6]/10 bg-[#11100E]/45'
         }`}>
           <p className={`text-xs ${breakdown.wasHighScoreCalibrated ? 'text-[#8EB4FF]' : 'text-[#F4EFE6]/38'}`}>
             高分门槛

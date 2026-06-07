@@ -24,7 +24,7 @@
   }
 
   html {
-    background: #11100E;
+    background: #14120F;
     color: #F4EFE6;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -36,14 +36,14 @@
     background:
       radial-gradient(circle at 18% -10%, rgba(107, 156, 255, 0.10), transparent 34rem),
       radial-gradient(circle at 86% 8%, rgba(214, 168, 90, 0.07), transparent 28rem),
-      linear-gradient(180deg, #11100E 0%, #0D0C0B 100%);
+      linear-gradient(180deg, #14120F 0%, #100F0D 100%);
     color: #F4EFE6;
   }
 }
 
 @layer utilities {
   .glass {
-    background: #181715;
+    background: #1A1815;
     border: 1px solid rgba(244, 239, 230, 0.09);
   }
 
@@ -74,7 +74,7 @@
   }
 
   .report-panel {
-    background: #181715;
+    background: #1A1815;
     border: 1px solid rgba(244, 239, 230, 0.09);
     border-radius: 16px;
   }

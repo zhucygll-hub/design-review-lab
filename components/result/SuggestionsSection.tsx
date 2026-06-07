@@ -20,13 +20,13 @@ const impactLabels: Record<string, string> = {
 }
 
 const effortColors: Record<string, string> = {
-  low: 'text-[#7EB98E] bg-[#7EB98E]/10',
+  low: 'text-[#7EE0A0] bg-[#7EB98E]/10',
   medium: 'text-[#D6A85A] bg-[#D6A85A]/10',
   high: 'text-[#D6A85A] bg-[#D6A85A]/10',
 }
 
 const impactColors: Record<string, string> = {
-  low: 'text-[#F4EFE6]/48 bg-[#F4EFE6]/6',
+  low: 'text-[#F4EFE6]/50 bg-[#F4EFE6]/6',
   medium: 'text-[#8EB4FF] bg-[#6B9CFF]/10',
   high: 'text-[#D6A85A] bg-[#D6A85A]/10',
 }
@@ -38,9 +38,11 @@ export default function SuggestionsSection({ suggestions }: SuggestionsSectionPr
 
   return (
     <div className="report-panel overflow-hidden">
-      <div className="border-b border-[#F4EFE6]/10 p-6">
+      <div className="border-b border-[#F4EFE6]/10 p-6 md:p-7">
         <p className="report-kicker">下一版修改路线</p>
-        <h2 className="report-title mt-2 text-xl">按这个顺序改，不要同时乱改</h2>
+        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.025em] text-[#F4EFE6]">
+          按这个顺序改，不要同时乱改
+        </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F4EFE6]/48">
           优先项解决会影响总评的结构性问题，快速项用于在不大改方案的情况下提升完成度。
         </p>
@@ -56,22 +58,22 @@ export default function SuggestionsSection({ suggestions }: SuggestionsSectionPr
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.04 }}
-              className="grid gap-4 p-5 md:grid-cols-[88px_1fr_170px] md:items-start"
+              className="grid gap-4 p-5 md:grid-cols-[86px_1fr_170px] md:items-start"
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-semibold ${
                     isPriority ? 'bg-[#D6A85A]/12 text-[#D6A85A]' : 'bg-[#6B9CFF]/12 text-[#8EB4FF]'
                   }`}
                 >
                   {index + 1}
                 </span>
-                <span className="text-xs text-[#F4EFE6]/38">
+                <span className="text-xs text-[#F4EFE6]/40">
                   {isPriority ? '优先项' : '快速项'}
                 </span>
               </div>
 
-              <p className="text-sm leading-6 text-[#F4EFE6]/68">{suggestion.content}</p>
+              <p className="text-[15px] leading-7 text-[#F4EFE6]/70">{suggestion.content}</p>
 
               <div className="flex flex-wrap gap-2 md:justify-end">
                 <span className={`rounded-full px-2.5 py-1 text-xs ${effortColors[suggestion.effort]}`}>
