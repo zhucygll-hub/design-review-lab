@@ -25,7 +25,7 @@ export default function PortfolioUploadZone({ onFile, disabled = false }: Portfo
       'application/pdf': [],
     },
     maxFiles: 1,
-    maxSize: 12 * 1024 * 1024, // 12MB safe ceiling: EdgeOne ~20MB body - base64 expansion (~1.33×) - JSON overhead
+    maxSize: 30 * 1024 * 1024, // 30MB — files >12MB will be auto-compressed client-side before upload
     disabled,
   })
 
@@ -76,7 +76,9 @@ export default function PortfolioUploadZone({ onFile, disabled = false }: Portfo
           {isDragActive ? '松开以上传作品集' : '拖拽或点击上传作品集 PDF'}
         </p>
         <p className="mt-2 text-sm text-[#F4EFE6]/45">提交完整作品集，系统会生成综合评审报告</p>
-        <p className="mt-1 text-xs text-[#F4EFE6]/30">支持 PDF 格式（最大 12MB，如过大请先用 Adobe Acrobat / Smallpdf / ilovepdf 压缩）</p>
+        <p className="mt-1 text-xs text-[#F4EFE6]/30">
+          支持 PDF 格式，12MB 以内直接上传，12-30MB 自动压缩后分析，超过 30MB 请减少页数或导出较低分辨率
+        </p>
       </div>
     </motion.div>
   )

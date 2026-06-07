@@ -16,8 +16,9 @@ export const maxDuration = 120
 const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
 const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3'
-// 12MB safe ceiling: EdgeOne Functions allow ~20MB request body.
+// 12MB safe ceiling for PDF: EdgeOne Functions allow ~20MB request body.
 // Base64 encoding adds ~1.33×, so 12MB original → ~16MB base64 + ~1MB JSON = ~17MB < 20MB.
+// Files >12MB should be handled client-side via image conversion before reaching this route.
 const MAX_PDF_BYTES = 12 * 1024 * 1024
 const AI_TIMEOUT_MS = 105_000
 
@@ -53,89 +54,173 @@ export async function POST(request: NextRequest) {
     const targetRole = (formData.get('targetRole') as string) || undefined
     const jobDescription = (formData.get('jobDescription') as string) || undefined
 
-    if (!file) {
+    // Check for image-based submission (large PDF converted client-side)
+    const imageFiles = formData.getAll('images') as File[]
+    const isImageMode = imageFiles.length > 0
+    const renderedPages = parseInt((formData.get('renderedPages') as string) || '0', 10)
+
+    if (!file && !isImageMode) {
       return NextResponse.json({ error: '未收到文件', requestId }, { status: 400 })
     }
 
-    if (file.type !== 'application/pdf') {
-      return NextResponse.json(
-        { error: '作品集评审仅支持 PDF 格式，请上传 PDF 文件', requestId },
-        { status: 400 }
-      )
-    }
-
-    if (file.size > MAX_PDF_BYTES) {
-      return NextResponse.json(
-        { error: 'PDF 文件超过 12MB，请用 Adobe Acrobat / Smallpdf / ilovepdf 压缩后重试', requestId },
-        { status: 413 }
-      )
-    }
-
-    const arrayBuffer = await file.arrayBuffer()
-    const bytes = new Uint8Array(arrayBuffer)
-    const dataUri = `data:application/pdf;base64,${arrayBufferToBase64(bytes)}`
-
-    // Build prompts
+    // Build prompts (same for both modes)
     const { system, user: baseUser } = buildPortfolioAnalysisPrompt(
       targetCompany,
       targetRole,
       jobDescription
     )
 
-    const userText = baseUser
+    let response: Response
+    let content: string | undefined
 
-    console.log(
-      `[portfolio:${requestId}] Calling Doubao Responses API, file=${file.name}, bytes=${file.size}`
-    )
-
-    // PDF document understanding is supported through Responses API input_file.
-    const response = await fetchArkWithRetry(
-      `${ARK_BASE_URL}/responses`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ARK_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: ARK_MODEL,
-          input: [
-            { role: 'system', content: system },
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'input_file',
-                  file_data: dataUri,
-                  filename: file.name,
-                },
-                { type: 'input_text', text: userText },
-              ],
-            },
-          ],
-          thinking: { type: 'disabled' },
-          top_p: 1,
-          max_output_tokens: 3000,
-        }),
-      },
-      AI_TIMEOUT_MS,
-      `[portfolio:${requestId}]`
-    )
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error(`[portfolio:${requestId}] Doubao error`, response.status, errText)
-      return NextResponse.json(
-        { error: parseArkError(response.status, errText, requestId), requestId },
-        { status: 502 }
+    if (isImageMode) {
+      // ── Image mode: large PDF converted to JPEG pages client-side ──
+      console.log(
+        `[portfolio:${requestId}] Image mode, pages=${imageFiles.length}, renderedFrom=${renderedPages}`
       )
+
+      // Convert each image to base64 data URI
+      const imageUris: string[] = []
+      for (const img of imageFiles) {
+        if (!img.type.startsWith('image/')) continue
+        const bytes = new Uint8Array(await img.arrayBuffer())
+        imageUris.push(`data:${img.type};base64,${arrayBufferToBase64(bytes)}`)
+      }
+
+      if (imageUris.length === 0) {
+        return NextResponse.json(
+          { error: '图片处理失败，请重试', requestId },
+          { status: 400 }
+        )
+      }
+
+      const userText =
+        baseUser +
+        `\n\n（注意：原始 PDF 共 ${renderedPages || imageFiles.length} 页，已提取前 ${imageFiles.length} 页作为图片供评审。请基于这些页面内容进行分析。）`
+
+      // Use Chat Completions API with image_url (same as single-work mode)
+      const imageContentBlocks = imageUris.map((uri) => ({
+        type: 'image_url' as const,
+        image_url: { url: uri, detail: 'auto' as const },
+      }))
+
+      console.log(
+        `[portfolio:${requestId}] Calling Doubao Chat Completions (image mode), images=${imageUris.length}`
+      )
+
+      const apiResponse = await fetchArkWithRetry(
+        `${ARK_BASE_URL}/chat/completions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${ARK_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: ARK_MODEL,
+            messages: [
+              { role: 'system', content: system },
+              {
+                role: 'user',
+                content: [...imageContentBlocks, { type: 'text', text: userText }],
+              },
+            ],
+            temperature: 0,
+            top_p: 1,
+            seed: 42,
+            thinking: { type: 'disabled' },
+            response_format: { type: 'json_object' },
+            max_completion_tokens: 3000,
+          }),
+        },
+        AI_TIMEOUT_MS,
+        `[portfolio:${requestId}]`
+      )
+
+      if (!apiResponse.ok) {
+        const errText = await apiResponse.text()
+        console.error(`[portfolio:${requestId}] Doubao Chat error`, apiResponse.status, errText)
+        return NextResponse.json(
+          { error: parseArkError(apiResponse.status, errText, requestId), requestId },
+          { status: 502 }
+        )
+      }
+
+      const data = await apiResponse.json()
+      content = data.choices?.[0]?.message?.content
+    } else {
+      // ── PDF mode: direct upload (≤12MB) via Responses API ──
+      if (file!.type !== 'application/pdf') {
+        return NextResponse.json(
+          { error: '作品集评审仅支持 PDF 格式，请上传 PDF 文件', requestId },
+          { status: 400 }
+        )
+      }
+
+      if (file!.size > MAX_PDF_BYTES) {
+        return NextResponse.json(
+          { error: 'PDF 文件超过 12MB，请减少页数或导出较低分辨率版本后重试', requestId },
+          { status: 413 }
+        )
+      }
+
+      const arrayBuffer = await file!.arrayBuffer()
+      const bytes = new Uint8Array(arrayBuffer)
+      const dataUri = `data:application/pdf;base64,${arrayBufferToBase64(bytes)}`
+      const userText = baseUser
+
+      console.log(
+        `[portfolio:${requestId}] Calling Doubao Responses API, file=${file!.name}, bytes=${file!.size}`
+      )
+
+      const apiResponse = await fetchArkWithRetry(
+        `${ARK_BASE_URL}/responses`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${ARK_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: ARK_MODEL,
+            input: [
+              { role: 'system', content: system },
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'input_file',
+                    file_data: dataUri,
+                    filename: file!.name,
+                  },
+                  { type: 'input_text', text: userText },
+                ],
+              },
+            ],
+            thinking: { type: 'disabled' },
+            top_p: 1,
+            max_output_tokens: 3000,
+          }),
+        },
+        AI_TIMEOUT_MS,
+        `[portfolio:${requestId}]`
+      )
+
+      if (!apiResponse.ok) {
+        const errText = await apiResponse.text()
+        console.error(`[portfolio:${requestId}] Doubao error`, apiResponse.status, errText)
+        return NextResponse.json(
+          { error: parseArkError(apiResponse.status, errText, requestId), requestId },
+          { status: 502 }
+        )
+      }
+
+      const data = await apiResponse.json()
+      content = extractResponsesText(data)
     }
 
-    const data = await response.json()
-    const content = extractResponsesText(data)
-
     if (!content) {
-      console.error(`[portfolio:${requestId}] Empty Doubao response`, JSON.stringify(data))
+      console.error(`[portfolio:${requestId}] Empty Doubao response`)
       return NextResponse.json(
         { error: `AI 返回内容为空。请求编号: ${requestId}`, requestId },
         { status: 502 }
@@ -152,7 +237,7 @@ export async function POST(request: NextRequest) {
     rawResult.targetRole = targetRole
     rawResult.jobDescription = jobDescription
     rawResult.imageUrl = ''
-    rawResult.fileName = file.name
+    rawResult.fileName = file?.name ?? `作品集（${imageFiles.length} 页图片）`
 
     // NORMALIZE
     const { result, debugInfo } = normalizeAnalysisResult(rawResult, { mode: 'portfolio' })
@@ -206,7 +291,6 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Pros/cons/suggestions quality control ──
-    // Portfolio AI already generates these; validate and fall back if needed.
     const aiPortfolioPros = result.pros
     const aiPortfolioCons = result.cons
     const aiPortfolioSuggestions = result.suggestions
@@ -222,7 +306,6 @@ export async function POST(request: NextRequest) {
           targetCompany: result.targetCompany,
           targetRole: result.targetRole,
         })
-        // Only override if not already overridden by mentor review fallback
         if (aiPortfolioPros === result.pros) result.pros = fallback.pros
         if (aiPortfolioCons === result.cons) result.cons = fallback.cons
         if (aiPortfolioSuggestions === result.suggestions) result.suggestions = fallback.suggestions
@@ -245,7 +328,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `[portfolio:${requestId}] Success, tier=${result.score}, elapsed=${Date.now() - startedAt}ms`
+      `[portfolio:${requestId}] Success, tier=${result.score}, mode=${isImageMode ? 'image' : 'pdf'}, elapsed=${Date.now() - startedAt}ms`
     )
     return NextResponse.json(result)
   } catch (err) {

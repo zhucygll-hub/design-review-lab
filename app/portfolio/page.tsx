@@ -56,21 +56,40 @@ export default function PortfolioAnalyzePage() {
 
       {/* File preview info */}
       {upload.file && !upload.isUploading && (
-        <div className="report-panel p-6 flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/64">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8Z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-            </svg>
+        <div className="space-y-4">
+          <div className="report-panel p-6 flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/64">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D6A85A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8Z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-[#F4EFE6]/78 truncate">{upload.file.name}</p>
+              <p className="text-xs text-[#F4EFE6]/42 mt-0.5">
+                {(upload.file.size / (1024 * 1024)).toFixed(1)} MB · PDF
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-[#F4EFE6]/78 truncate">{upload.file.name}</p>
-            <p className="text-xs text-[#F4EFE6]/42 mt-0.5">
-              {(upload.file.size / (1024 * 1024)).toFixed(1)} MB · PDF
-            </p>
-          </div>
+
+          {/* Large PDF notice */}
+          {upload.file.size > 12 * 1024 * 1024 && upload.file.size <= 30 * 1024 * 1024 && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-[#6B9CFF]/18 bg-[#6B9CFF]/7 p-4">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B9CFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <div>
+                <p className="text-xs font-medium text-[#8EB4FF]">大型 PDF 自动优化</p>
+                <p className="text-xs text-[#F4EFE6]/46 mt-0.5 leading-relaxed">
+                  文件较大（{(upload.file.size / (1024 * 1024)).toFixed(1)} MB），开始分析时将自动提取前若干页为图片后送入 AI 评审。处理可能需要 10-30 秒，请耐心等待。
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -85,6 +104,16 @@ export default function PortfolioAnalyzePage() {
       {/* Progress and thinking state */}
       {upload.isUploading && !upload.isAwaitingTargetInput && (
         <div className="space-y-8">
+          {/* PDF processing progress (before AI call) */}
+          {upload.processingPhase === 'rendering' && (
+            <div className="report-panel p-5 flex items-center gap-4">
+              <div className="h-5 w-5 rounded-full border-2 border-[#6B9CFF] border-t-transparent animate-spin shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-[#8EB4FF]">{upload.processingMessage || '正在处理 PDF…'}</p>
+                <p className="text-xs text-[#F4EFE6]/38 mt-0.5">大型 PDF 正在提取页面并压缩，可能需要 10-30 秒</p>
+              </div>
+            </div>
+          )}
           <ProgressBar progress={upload.progress} />
           <AIThinking currentDimension={upload.currentDimension} isWaitingForApi={upload.isWaitingForApi} />
           <DimensionList
