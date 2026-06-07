@@ -24,6 +24,7 @@ export default function UploadZone({ onFile, disabled = false }: UploadZoneProps
     accept: {
       'image/jpeg': [],
       'image/png': [],
+      'application/pdf': [],
     },
     maxFiles: 1,
     disabled,
@@ -75,7 +76,7 @@ export default function UploadZone({ onFile, disabled = false }: UploadZoneProps
           {isDragActive ? '松开以上传作品' : '拖拽或点击上传作品'}
         </p>
         <p className="mt-2 text-sm text-[#F4EFE6]/45">提交单张作品图片，系统会生成一份评审报告</p>
-        <p className="mt-1 text-xs text-[#F4EFE6]/30">支持 JPG、PNG 格式</p>
+        <p className="mt-1 text-xs text-[#F4EFE6]/30">支持 JPG、PNG、PDF 格式（PDF 自动提取第一页作为评审图片）</p>
       </div>
     </motion.div>
   )

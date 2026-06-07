@@ -16,7 +16,9 @@ export const maxDuration = 120
 const ARK_API_KEY = process.env.ARK_API_KEY
 const ARK_MODEL = process.env.ARK_MODEL || 'doubao-seed-2-0-pro-260215'
 const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3'
-const MAX_PDF_BYTES = 8 * 1024 * 1024
+// 12MB safe ceiling: EdgeOne Functions allow ~20MB request body.
+// Base64 encoding adds ~1.33×, so 12MB original → ~16MB base64 + ~1MB JSON = ~17MB < 20MB.
+const MAX_PDF_BYTES = 12 * 1024 * 1024
 const AI_TIMEOUT_MS = 105_000
 
 // Edge-compatible base64 encoder (no Buffer API in Edge Functions)
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_PDF_BYTES) {
       return NextResponse.json(
-        { error: 'PDF 文件超过 8MB，请压缩后重试', requestId },
+        { error: 'PDF 文件超过 12MB，请用 Adobe Acrobat / Smallpdf / ilovepdf 压缩后重试', requestId },
         { status: 413 }
       )
     }

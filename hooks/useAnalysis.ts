@@ -68,10 +68,38 @@ export function useAnalysis() {
     }))
 
     try {
-      // Compress image client-side to stay under Vercel 4.5MB body limit
-      const compressed = await compressImageClient(upload.file, 1024, 0.72)
+      // If PDF, convert first page to image first
+      let imageFile: File | Blob = upload.file
+      const isPdf = upload.file.type === 'application/pdf'
+
+      if (isPdf) {
+        setUpload((prev) => ({
+          ...prev,
+          currentDimension: '正在提取 PDF 第一页…',
+        }))
+        // Dynamic import to avoid SSR — pdfjs-dist uses DOMMatrix (browser-only)
+        const { pdfFirstPageToImage } = await import('@/lib/pdf-to-image')
+        const imageBlob = await pdfFirstPageToImage(upload.file)
+        if (!imageBlob) {
+          setUpload((prev) => ({
+            ...prev,
+            isUploading: false,
+            error: 'PDF 转换失败，请将 PDF 的第一页导出为 JPG/PNG 后上传，或使用「作品集评审」功能上传完整 PDF。',
+          }))
+          return
+        }
+        // Create a File-like name for the converted image
+        imageFile = new File([imageBlob], upload.file.name.replace(/\.pdf$/i, '.jpg'), { type: 'image/jpeg' })
+      }
+
+      // Compress image client-side to stay under EdgeOne body limit
+      const compressed = await compressImageClient(
+        imageFile instanceof File ? imageFile : new File([imageFile], 'image.jpg', { type: 'image/jpeg' }),
+        1024,
+        0.72
+      )
       const formData = new FormData()
-      formData.append('file', compressed, upload.file.name)
+      formData.append('file', compressed, upload.file.name.replace(/\.pdf$/i, isPdf ? '.jpg' : upload.file.name))
       formData.append('designType', upload.designType)
       formData.append('workForm', upload.workForm)
       formData.append('reviewPurpose', upload.reviewPurpose)
