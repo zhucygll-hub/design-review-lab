@@ -10,6 +10,7 @@ import DimensionSummary from '@/components/result/DimensionSummary'
 import MentorReview from '@/components/result/MentorReview'
 import ProsConsSection from '@/components/result/ProsConsSection'
 import SuggestionsSection from '@/components/result/SuggestionsSection'
+import PortfolioReviewScope from '@/components/result/PortfolioReviewScope'
 import ExportButton from '@/components/result/ExportButton'
 import { AnalysisResult } from '@/types'
 import {
@@ -123,6 +124,10 @@ export default function ResultPage() {
         </section>
 
         <ResultInsightPanel result={result} />
+
+        {result.mode === 'portfolio' && result.portfolioReviewScope && (
+          <PortfolioReviewScope scope={result.portfolioReviewScope} />
+        )}
 
         <DimensionSummary dimensions={result.dimensions} />
 

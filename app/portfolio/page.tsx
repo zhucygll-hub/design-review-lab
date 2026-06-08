@@ -42,6 +42,7 @@ export default function PortfolioAnalyzePage() {
           <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[#F4EFE6]">作品集评审</h1>
           <p className="mt-2 text-sm leading-6 text-[#F4EFE6]/48">
             上传完整作品集 PDF，系统会从项目质量、设计思维、视觉表达和岗位匹配度生成综合报告。
+            大型 PDF 会智能抽样代表页，避免只看开头几页。
           </p>
         </div>
         {upload.file && !upload.isUploading && (
@@ -85,7 +86,7 @@ export default function PortfolioAnalyzePage() {
               <div>
                 <p className="text-xs font-medium text-[#8EB4FF]">大型 PDF 自动优化</p>
                 <p className="text-xs text-[#F4EFE6]/46 mt-0.5 leading-relaxed">
-                  文件较大（{(upload.file.size / (1024 * 1024)).toFixed(1)} MB），开始分析时将自动提取前若干页为图片后送入 AI 评审。处理可能需要 10-30 秒，请耐心等待。
+                  文件较大（{(upload.file.size / (1024 * 1024)).toFixed(1)} MB），开始分析时将从封面、目录、中段项目和结尾智能抽样代表页送入 AI 评审。处理可能需要 10-30 秒，请耐心等待。
                 </p>
               </div>
             </div>
@@ -110,7 +111,7 @@ export default function PortfolioAnalyzePage() {
               <div className="h-5 w-5 rounded-full border-2 border-[#6B9CFF] border-t-transparent animate-spin shrink-0" />
               <div>
                 <p className="text-sm font-medium text-[#8EB4FF]">{upload.processingMessage || '正在处理 PDF…'}</p>
-                <p className="text-xs text-[#F4EFE6]/38 mt-0.5">大型 PDF 正在提取页面并压缩，可能需要 10-30 秒</p>
+                <p className="text-xs text-[#F4EFE6]/38 mt-0.5">大型 PDF 正在抽样代表页并压缩，可能需要 10-30 秒</p>
               </div>
             </div>
           )}

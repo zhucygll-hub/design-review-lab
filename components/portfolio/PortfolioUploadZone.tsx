@@ -77,7 +77,7 @@ export default function PortfolioUploadZone({ onFile, disabled = false }: Portfo
         </p>
         <p className="mt-2 text-sm text-[#F4EFE6]/45">提交完整作品集，系统会生成综合评审报告</p>
         <p className="mt-1 text-xs text-[#F4EFE6]/30">
-          支持 PDF 格式，12MB 以内直接上传，12-30MB 自动压缩后分析，超过 30MB 请减少页数或导出较低分辨率
+          支持 PDF 格式，12MB 以内直接上传，12-30MB 智能抽样代表页后分析，超过 30MB 请减少页数或导出较低分辨率
         </p>
       </div>
     </motion.div>

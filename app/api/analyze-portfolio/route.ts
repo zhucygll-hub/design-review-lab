@@ -58,6 +58,12 @@ export async function POST(request: NextRequest) {
     const imageFiles = formData.getAll('images') as File[]
     const isImageMode = imageFiles.length > 0
     const renderedPages = parseInt((formData.get('renderedPages') as string) || '0', 10)
+    const totalPdfPages = parseInt((formData.get('totalPdfPages') as string) || '0', 10)
+    const selectedPages = ((formData.get('selectedPages') as string) || '')
+      .split(',')
+      .map((page) => parseInt(page, 10))
+      .filter((page) => Number.isFinite(page) && page > 0)
+    const reviewScopeNote = (formData.get('reviewScopeNote') as string) || ''
 
     if (!file && !isImageMode) {
       return NextResponse.json({ error: '未收到文件', requestId }, { status: 400 })
@@ -96,7 +102,12 @@ export async function POST(request: NextRequest) {
 
       const userText =
         baseUser +
-        `\n\n（注意：原始 PDF 共 ${renderedPages || imageFiles.length} 页，已提取前 ${imageFiles.length} 页作为图片供评审。请基于这些页面内容进行分析。）`
+        `\n\n【评审范围说明】` +
+        `\n原始 PDF 共 ${totalPdfPages || renderedPages || imageFiles.length} 页。` +
+        `\n本次不是只提取前几页，而是智能抽样 ${imageFiles.length} 页进行重点评审。` +
+        `\n抽样页码：${selectedPages.length > 0 ? selectedPages.join('、') : '未提供页码，请按图片顺序判断'}` +
+        `\n图片顺序与上述页码一一对应，例如第 1 张图片代表 PDF 第 ${selectedPages[0] ?? 1} 页。` +
+        `\n${reviewScopeNote || '请基于这些代表性页面评价作品集整体结构、项目顺序、视觉一致性和关键短板，并在文字中明确引用页码。'}`
 
       // Use Chat Completions API with image_url (same as single-work mode)
       const imageContentBlocks = imageUris.map((uri) => ({
@@ -241,6 +252,18 @@ export async function POST(request: NextRequest) {
 
     // NORMALIZE
     const { result, debugInfo } = normalizeAnalysisResult(rawResult, { mode: 'portfolio' })
+
+    if (isImageMode) {
+      result.portfolioReviewScope = {
+        totalPages: totalPdfPages || renderedPages || imageFiles.length,
+        analyzedPages: selectedPages.length > 0
+          ? selectedPages
+          : Array.from({ length: imageFiles.length }, (_, index) => index + 1),
+        analyzedPageCount: imageFiles.length,
+        strategy: 'smart_sample',
+        note: reviewScopeNote || `已智能抽样 ${imageFiles.length} 页进行重点评审。`,
+      }
+    }
 
     // ── Mentor review quality control ──
     const aiReviews = result.mentorReviews

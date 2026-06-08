@@ -50,6 +50,14 @@ export interface ScoreBreakdown {
   boundaryProximity: string | null // 若最终分在档位边界 ±3 内，描述该边界（如 "C/D"），否则 null
 }
 
+export interface PortfolioReviewScope {
+  totalPages: number
+  analyzedPages: number[]
+  analyzedPageCount: number
+  strategy: 'full_pdf' | 'smart_sample'
+  note: string
+}
+
 export interface AnalysisResult {
   id: string
   imageUrl: string
@@ -73,6 +81,7 @@ export interface AnalysisResult {
   targetCompany?: string
   targetRole?: string
   jobDescription?: string
+  portfolioReviewScope?: PortfolioReviewScope
   // Calibration
   calibrationNote?: string   // AI-generated explanation of why this score tier
   scoreBreakdown?: ScoreBreakdown  // server-side calibration trace

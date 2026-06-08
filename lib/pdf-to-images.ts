@@ -12,9 +12,18 @@ export interface PdfPageImage {
   height: number
 }
 
+export interface PdfRenderResult {
+  images: PdfPageImage[]
+  totalPages: number
+  selectedPages: number[]
+  strategyNote: string
+}
+
 export interface PdfToImagesOptions {
   /** Max pages to render (default 12). Fewer pages = faster processing + smaller upload. */
   maxPages?: number
+  /** Specific page numbers to render. When omitted, uses smart sampling across the full PDF. */
+  pageNumbers?: number[]
   /** Max width in pixels (default 1200). Height scales proportionally. */
   maxWidth?: number
   /** JPEG quality 0-1 (default 0.72). */
@@ -28,9 +37,10 @@ export interface PdfToImagesOptions {
 export async function pdfPagesToImages(
   file: File,
   options: PdfToImagesOptions = {}
-): Promise<PdfPageImage[]> {
+): Promise<PdfRenderResult> {
   const {
     maxPages = 12,
+    pageNumbers,
     maxWidth = 1200,
     quality = 0.72,
     onProgress,
@@ -48,13 +58,16 @@ export async function pdfPagesToImages(
     throw new Error('PDF 文件没有可读取的页面')
   }
 
-  const totalPages = Math.min(pdf.numPages, maxPages)
+  const selectedPages = pageNumbers?.length
+    ? normalizePageNumbers(pageNumbers, pdf.numPages, maxPages)
+    : buildSmartSamplePages(pdf.numPages, maxPages)
   const results: PdfPageImage[] = []
 
-  for (let i = 1; i <= totalPages; i++) {
+  for (let index = 0; index < selectedPages.length; index++) {
     if (signal?.aborted) throw new Error('处理已取消')
 
-    const page = await pdf.getPage(i)
+    const pageNumber = selectedPages[index]
+    const page = await pdf.getPage(pageNumber)
     const baseViewport = page.getViewport({ scale: 1 })
     const scale = Math.min(maxWidth / baseViewport.width, 2) // never exceed 2× scale
     const viewport = page.getViewport({ scale })
@@ -72,20 +85,58 @@ export async function pdfPagesToImages(
     })
 
     if (!blob || blob.size === 0) {
-      throw new Error(`第 ${i} 页渲染失败`)
+      throw new Error(`第 ${pageNumber} 页渲染失败`)
     }
 
     results.push({
       blob,
-      pageNumber: i,
+      pageNumber,
       width: viewport.width,
       height: viewport.height,
     })
 
-    onProgress?.(i, totalPages)
+    onProgress?.(index + 1, selectedPages.length)
   }
 
-  return results
+  return {
+    images: results,
+    totalPages: pdf.numPages,
+    selectedPages,
+    strategyNote:
+      selectedPages.length >= pdf.numPages
+        ? '已分析完整 PDF。'
+        : `已从 ${pdf.numPages} 页中智能抽样 ${selectedPages.length} 页，覆盖开头、中段、结尾和代表性项目页。`,
+  }
+}
+
+function normalizePageNumbers(pageNumbers: number[], totalPages: number, maxPages: number): number[] {
+  return [...new Set(pageNumbers)]
+    .filter((page) => Number.isInteger(page) && page >= 1 && page <= totalPages)
+    .slice(0, maxPages)
+    .sort((a, b) => a - b)
+}
+
+export function buildSmartSamplePages(totalPages: number, maxPages: number): number[] {
+  if (totalPages <= 0 || maxPages <= 0) return []
+  if (totalPages <= maxPages) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1)
+  }
+
+  const anchors = new Set<number>([1, totalPages])
+  if (totalPages >= 2) anchors.add(2)
+  if (totalPages >= 3) anchors.add(3)
+  if (totalPages >= 4) anchors.add(totalPages - 1)
+
+  for (let i = 0; anchors.size < maxPages && i < maxPages; i++) {
+    const page = Math.round(1 + (i * (totalPages - 1)) / (maxPages - 1))
+    anchors.add(page)
+  }
+
+  for (let page = 1; anchors.size < maxPages && page <= totalPages; page++) {
+    anchors.add(page)
+  }
+
+  return [...anchors].sort((a, b) => a - b).slice(0, maxPages)
 }
 
 /**
@@ -108,10 +159,11 @@ export function assessPdfSize(file: File): {
   }
 
   if (mb <= 30) {
+    const maxPages = Math.min(12, Math.max(8, Math.floor(14 * (12 / mb))))
     return {
       action: 'compress',
-      maxPages: Math.min(12, Math.max(6, Math.floor(12 * (12 / mb)))),
-      reason: `文件较大（${mb.toFixed(1)}MB），将自动提取前若干页为图片后分析。`,
+      maxPages,
+      reason: `文件较大（${mb.toFixed(1)}MB），将自动智能抽样 ${maxPages} 页为图片后分析。`,
     }
   }
 

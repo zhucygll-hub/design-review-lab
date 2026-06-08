@@ -44,7 +44,12 @@ export function usePortfolioAnalysis() {
   const resolveTargetRef = useRef<(() => void) | null>(null)
   /** Cached processed images for large PDFs — avoid re-rendering on retry */
   const processedImagesRef = useRef<File[] | null>(null)
-  const processedPageInfoRef = useRef<{ rendered: number; total: number } | null>(null)
+  const processedPageInfoRef = useRef<{
+    rendered: number
+    total: number
+    selectedPages: number[]
+    strategyNote: string
+  } | null>(null)
 
   const handleFile = useCallback((file: File) => {
     // Check PDF size and show early guidance
@@ -124,20 +129,22 @@ export function usePortfolioAnalysis() {
           formData = buildImageFormData(
             processedImagesRef.current,
             processedPageInfoRef.current.rendered,
-            processedPageInfoRef.current.total
+            processedPageInfoRef.current.total,
+            processedPageInfoRef.current.selectedPages,
+            processedPageInfoRef.current.strategyNote
           )
         } else {
           setUpload((prev) => ({
             ...prev,
             processingPhase: 'rendering',
-            processingMessage: '正在提取 PDF 页面…',
+            processingMessage: '正在智能抽样 PDF 代表页…',
           }))
 
           const maxPages = assessment.maxPages
           let lastProgress = 0
 
           try {
-            const pageImages = await withTimeout(
+            const renderResult = await withTimeout(
               pdfPagesToImages(file, {
                 maxPages,
                 maxWidth: 1200,
@@ -148,7 +155,7 @@ export function usePortfolioAnalysis() {
                     lastProgress = pct
                     setUpload((prev) => ({
                       ...prev,
-                      processingMessage: `正在处理第 ${current}/${total} 页…`,
+                      processingMessage: `正在处理第 ${current}/${total} 张代表页…`,
                       progress: Math.round((current / total) * 15), // first 15% of total
                     }))
                   }
@@ -156,6 +163,7 @@ export function usePortfolioAnalysis() {
               }),
               PDF_PROCESSING_TIMEOUT_MS
             )
+            const pageImages = renderResult.images
 
             // Convert blobs to File objects for FormData
             const imageFiles = pageImages.map(
@@ -165,10 +173,18 @@ export function usePortfolioAnalysis() {
             processedImagesRef.current = imageFiles
             processedPageInfoRef.current = {
               rendered: pageImages.length,
-              total: pageImages.length, // We use rendered count
+              total: renderResult.totalPages,
+              selectedPages: renderResult.selectedPages,
+              strategyNote: renderResult.strategyNote,
             }
 
-            formData = buildImageFormData(imageFiles, pageImages.length, pageImages.length)
+            formData = buildImageFormData(
+              imageFiles,
+              pageImages.length,
+              renderResult.totalPages,
+              renderResult.selectedPages,
+              renderResult.strategyNote
+            )
           } catch (err) {
             const msg =
               err instanceof Error && err.message === 'PDF processing timed out'
@@ -282,7 +298,9 @@ export function usePortfolioAnalysis() {
             reFormData = buildImageFormData(
               processedImagesRef.current,
               processedPageInfoRef.current.rendered,
-              processedPageInfoRef.current.total
+              processedPageInfoRef.current.total,
+              processedPageInfoRef.current.selectedPages,
+              processedPageInfoRef.current.strategyNote
             )
           } else {
             reFormData = new FormData()
@@ -375,7 +393,9 @@ export function usePortfolioAnalysis() {
 function buildImageFormData(
   images: File[],
   rendered: number,
-  totalPdfPages: number
+  totalPdfPages: number,
+  selectedPages: number[] = [],
+  strategyNote = ''
 ): FormData {
   const fd = new FormData()
   for (const img of images) {
@@ -383,6 +403,8 @@ function buildImageFormData(
   }
   fd.append('renderedPages', String(rendered))
   fd.append('totalPdfPages', String(totalPdfPages))
+  fd.append('selectedPages', selectedPages.join(','))
+  fd.append('reviewScopeNote', strategyNote)
   return fd
 }
 
