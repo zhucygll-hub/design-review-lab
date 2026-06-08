@@ -27,7 +27,7 @@ export default function DimensionSummary({ dimensions }: DimensionSummaryProps) 
         <div>
           <h2 className="report-title text-lg mb-1">维度分析</h2>
           <p className="text-sm leading-6 text-[#F4EFE6]/45">
-            雷达图用于观察优势与短板分布。默认只展示最关键的维度摘要，完整分数可展开查看。
+            默认只列出最低、第二短板和最高维度，完整分数可展开查看。
           </p>
         </div>
         <button
@@ -43,9 +43,9 @@ export default function DimensionSummary({ dimensions }: DimensionSummaryProps) 
         <RadarChart dimensions={dimensions} />
       </div>
 
-      <div className="mt-6 grid gap-0 overflow-hidden rounded-xl border border-[#F4EFE6]/8 md:grid-cols-3">
+      <div className="mt-6 grid gap-0 overflow-hidden border-y border-[#F4EFE6]/8 md:grid-cols-3">
         {lowDimensions.map((dimension, index) => (
-          <div key={dimension.name} className="border-b border-[#F4EFE6]/8 p-4 md:border-b-0 md:border-r">
+          <div key={dimension.name} className="border-b border-[#F4EFE6]/8 py-4 md:border-b-0 md:border-r md:px-4">
             <p className="text-xs font-medium text-[#D6A85A]">
               {index === 0 ? '最低维度' : '第二短板'}
             </p>
@@ -57,7 +57,7 @@ export default function DimensionSummary({ dimensions }: DimensionSummaryProps) 
         ))}
 
         {highDimension && (
-          <div className="p-4">
+          <div className="py-4 md:px-4">
             <p className="text-xs font-medium text-[#7EE0A0]">最高维度</p>
             <div className="mt-2 flex items-baseline justify-between gap-3">
               <p className="text-sm font-semibold text-[#F4EFE6]">{highDimension.name}</p>

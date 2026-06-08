@@ -75,18 +75,18 @@ export default function ResultInsightPanel({ result }: ResultInsightPanelProps) 
 
   return (
     <section className="report-panel overflow-hidden">
-      <div className="border-b border-[#F4EFE6]/10 p-6 md:p-7">
+      <div className="border-b border-[#F4EFE6]/10 p-5 md:p-6">
         <p className="report-kicker">报告导读</p>
-        <div className="mt-3 grid gap-5 md:grid-cols-[1.1fr_0.9fr] md:items-end">
+        <div className="mt-3 grid gap-4 xl:grid-cols-[1fr_0.9fr] xl:items-end">
           <div>
-            <h2 className="text-2xl font-semibold tracking-[-0.025em] text-[#F4EFE6] md:text-3xl">
+            <h2 className="text-2xl font-semibold tracking-[-0.025em] text-[#F4EFE6]">
               先看这 3 个问题
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#F4EFE6]/50">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F4EFE6]/50">
               这里先把影响总评和修改方向的关键问题列出来，再进入完整维度和导师点评。
             </p>
           </div>
-          <p className="rounded-xl border border-[#F4EFE6]/10 bg-[#11100E]/38 p-4 text-sm leading-6 text-[#F4EFE6]/58">
+          <p className="border-t border-[#F4EFE6]/8 pt-3 text-sm leading-6 text-[#F4EFE6]/58 xl:border-t-0 xl:pt-0">
             {getScoreReason(result)}
           </p>
         </div>
@@ -104,10 +104,10 @@ export default function ResultInsightPanel({ result }: ResultInsightPanelProps) 
           return (
             <div
               key={`${problem.title}-${index}`}
-              className="grid gap-4 p-5 md:grid-cols-[64px_1fr_80px] md:items-start"
+              className="grid gap-4 px-5 py-4 md:grid-cols-[52px_1fr_72px] md:items-start"
             >
               <span
-                className="flex h-10 w-10 items-center justify-center rounded-full text-base font-semibold"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold"
                 style={{ backgroundColor: `${color}18`, color }}
               >
                 {index + 1}
@@ -132,7 +132,7 @@ export default function ResultInsightPanel({ result }: ResultInsightPanelProps) 
       </div>
 
       {strongest && (
-        <div className="border-t border-[#7EB98E]/18 bg-[#7EB98E]/6 p-6 md:p-7">
+        <div className="border-t border-[#7EB98E]/18 bg-[#7EB98E]/6 p-5 md:p-6">
           <p className="text-xs font-medium text-[#7EE0A0]">可以保留的优势</p>
           <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>

@@ -28,6 +28,24 @@ const PORTFOLIO_PURPOSE_LABELS: Record<PortfolioPurpose, string> = {
   unsure: '用途待判断',
 }
 
+function buildContextItems(result: AnalysisResult) {
+  const items: Array<{ label: string; value: string }> = []
+
+  if (result.mode === 'portfolio') {
+    items.push({
+      label: '用途',
+      value: PORTFOLIO_PURPOSE_LABELS[result.portfolioPurpose ?? 'unsure'],
+    })
+    if (result.targetRole) items.push({ label: '岗位', value: result.targetRole })
+    if (result.targetCompany) items.push({ label: '公司', value: result.targetCompany })
+    if (result.targetSchool) items.push({ label: '院校', value: result.targetSchool })
+    if (result.targetMajor) items.push({ label: '方向', value: result.targetMajor })
+    if (result.portfolioGoal) items.push({ label: '目标', value: result.portfolioGoal })
+  }
+
+  return items
+}
+
 export default function ResultPage() {
   const params = useParams()
   const resultId = Array.isArray(params.id) ? params.id[0] : params.id
@@ -45,6 +63,7 @@ export default function ResultPage() {
     }
     return null
   })
+  const contextItems = result ? buildContextItems(result) : []
 
   if (!result) {
     return (
@@ -67,7 +86,7 @@ export default function ResultPage() {
               {result.fileName}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F4EFE6]/48">
-              先看 3 个关键问题和优先修改项，再查看完整维度、导师点评和评分依据。
+              先看总分旁边的 3 个关键问题，再查看完整维度、导师点评和评分依据。
             </p>
           </div>
           <ExportButton />
@@ -102,6 +121,17 @@ export default function ResultPage() {
             </span>
           )}
         </div>
+
+        {contextItems.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#F4EFE6]/8 pt-4">
+            {contextItems.slice(0, 5).map((item) => (
+              <div key={`${item.label}-${item.value}`} className="flex items-center gap-2 text-xs">
+                <span className="text-[#F4EFE6]/34">{item.label}</span>
+                <span className="max-w-[220px] truncate text-[#F4EFE6]/66">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-6 flex items-center justify-between">
@@ -118,78 +148,22 @@ export default function ResultPage() {
       </div>
 
       <div className="mt-8 space-y-10">
-        <section>
+        <section className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
           <ScoreBadge
             score={result.score}
             scoreLabel={result.scoreLabel}
             scoreNumeric={result.scoreNumeric}
             evidence={result.scoreBreakdown ? <ScoreEvidence result={result} /> : undefined}
+            compact
           />
+          <ResultInsightPanel result={result} />
         </section>
-
-        <ResultInsightPanel result={result} />
 
         {result.mode === 'portfolio' && result.portfolioReviewScope && (
           <PortfolioReviewScope scope={result.portfolioReviewScope} />
         )}
 
         <DimensionSummary dimensions={result.dimensions} />
-
-        {result.mode === 'portfolio' && (
-          <section className="report-section">
-            <h2 className="report-title text-lg mb-4">评审背景</h2>
-            <div className="report-inline-panel space-y-2 p-5">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-[#F4EFE6]/38">用途：</span>
-                <span className="text-[#F4EFE6]/70">
-                  {PORTFOLIO_PURPOSE_LABELS[result.portfolioPurpose ?? 'unsure']}
-                </span>
-              </div>
-              {result.targetCompany && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-[#F4EFE6]/38">公司：</span>
-                  <span className="text-[#F4EFE6]/70">{result.targetCompany}</span>
-                </div>
-              )}
-              {result.targetRole && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-[#F4EFE6]/38">岗位：</span>
-                  <span className="text-[#F4EFE6]/70">{result.targetRole}</span>
-                </div>
-              )}
-              {result.targetSchool && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-[#F4EFE6]/38">院校：</span>
-                  <span className="text-[#F4EFE6]/70">{result.targetSchool}</span>
-                </div>
-              )}
-              {result.targetMajor && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-[#F4EFE6]/38">方向：</span>
-                  <span className="text-[#F4EFE6]/70">{result.targetMajor}</span>
-                </div>
-              )}
-              {result.jobDescription && (
-                <div className="mt-3 rounded-lg bg-[#11100E]/48 p-3">
-                  <p className="text-xs text-[#F4EFE6]/34 mb-1">JD 摘要</p>
-                  <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.jobDescription}</p>
-                </div>
-              )}
-              {result.applicationRequirement && (
-                <div className="mt-3 rounded-lg bg-[#11100E]/48 p-3">
-                  <p className="text-xs text-[#F4EFE6]/34 mb-1">申请要求</p>
-                  <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.applicationRequirement}</p>
-                </div>
-              )}
-              {result.portfolioGoal && (
-                <div className="mt-3 rounded-lg bg-[#11100E]/48 p-3">
-                  <p className="text-xs text-[#F4EFE6]/34 mb-1">评审目标</p>
-                  <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.portfolioGoal}</p>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
 
         <section className="report-section">
           <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
