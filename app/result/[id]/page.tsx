@@ -148,7 +148,7 @@ export default function ResultPage() {
       </div>
 
       <div className="mt-8 space-y-10">
-        <section className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+        <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
           <ScoreBadge
             score={result.score}
             scoreLabel={result.scoreLabel}
