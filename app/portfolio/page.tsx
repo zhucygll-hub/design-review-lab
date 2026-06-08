@@ -12,8 +12,7 @@ import { useHistory } from '@/hooks/useHistory'
 
 export default function PortfolioAnalyzePage() {
   const router = useRouter()
-  const { upload, handleFile, startAnalysis, setTargetInfo, skipTargetInfo, reset } =
-    usePortfolioAnalysis()
+  const { upload, handleFile, startAnalysis, setTargetInfo, reset } = usePortfolioAnalysis()
   const { addItem } = useHistory()
 
   const handleStartAnalysis = async () => {
@@ -41,7 +40,7 @@ export default function PortfolioAnalyzePage() {
           <p className="report-kicker">提交评审材料</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[#F4EFE6]">作品集评审</h1>
           <p className="mt-2 text-sm leading-6 text-[#F4EFE6]/48">
-            上传完整作品集 PDF，系统会从项目质量、设计思维、视觉表达和岗位匹配度生成综合报告。
+            上传完整作品集 PDF，系统会从项目质量、设计思维、视觉表达和使用场景适配生成综合报告。
             大型 PDF 会智能抽样代表页，避免只看开头几页。
           </p>
         </div>
@@ -94,16 +93,10 @@ export default function PortfolioAnalyzePage() {
         </div>
       )}
 
-      {/* Target input card (shown during pause in analysis) */}
-      {upload.isAwaitingTargetInput && (
-        <TargetInputCard
-          onSubmit={(data) => setTargetInfo(data.company, data.role, data.jd)}
-          onSkip={skipTargetInfo}
-        />
-      )}
+      {upload.file && !upload.isUploading && <TargetInputCard onChange={setTargetInfo} />}
 
       {/* Progress and thinking state */}
-      {upload.isUploading && !upload.isAwaitingTargetInput && (
+      {upload.isUploading && (
         <div className="space-y-8">
           {/* PDF processing progress (before AI call) */}
           {upload.processingPhase === 'rendering' && (

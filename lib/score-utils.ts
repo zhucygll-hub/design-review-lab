@@ -33,7 +33,7 @@ export const PORTFOLIO_DIMENSION_NAMES = [
   '专业能力',
   '视觉表达能力',
   '差异化竞争力',
-  '岗位匹配度',
+  '场景适配度',
 ] as const
 
 export const PORTFOLIO_WEIGHTS: Record<string, number> = {
@@ -43,7 +43,12 @@ export const PORTFOLIO_WEIGHTS: Record<string, number> = {
   '专业能力': 15,
   '视觉表达能力': 10,
   '差异化竞争力': 10,
+  '场景适配度': 10,
   '岗位匹配度': 10,
+  '申请匹配度': 10,
+  '课程目标适配度': 10,
+  '比赛适配度': 10,
+  '展示适配度': 10,
 }
 
 // ============================================================

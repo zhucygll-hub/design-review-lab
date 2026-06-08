@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { HistoryItem } from '@/types'
 
 const NEW_STORAGE_KEY = 'design-review-lab-history'
 const OLD_STORAGE_KEY = 'ai-portfolio-tutor-history'
 
 export function useHistory() {
-  const [items, setItems] = useState<HistoryItem[]>([])
+  const [items, setItems] = useState<HistoryItem[]>(() => {
+    if (typeof window === 'undefined') return []
 
-  useEffect(() => {
     try {
       let stored = localStorage.getItem(NEW_STORAGE_KEY)
 
@@ -26,17 +26,16 @@ export function useHistory() {
       if (stored) {
         const parsed = JSON.parse(stored)
         // Normalize old items: add mode field if missing
-        setItems(
-          parsed.map((item: Record<string, unknown>) => ({
+        return parsed.map((item: Record<string, unknown>) => ({
             ...item,
             mode: item.mode || 'single',
           })) as HistoryItem[]
-        )
       }
     } catch {
       localStorage.removeItem(NEW_STORAGE_KEY)
     }
-  }, [])
+    return []
+  })
 
   const persist = useCallback((newItems: HistoryItem[]) => {
     setItems(newItems)

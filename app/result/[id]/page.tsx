@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import ScoreBadge from '@/components/result/ScoreBadge'
 import ScoreEvidence from '@/components/result/ScoreEvidence'
 import ResultInsightPanel from '@/components/result/ResultInsightPanel'
@@ -12,40 +12,39 @@ import ProsConsSection from '@/components/result/ProsConsSection'
 import SuggestionsSection from '@/components/result/SuggestionsSection'
 import PortfolioReviewScope from '@/components/result/PortfolioReviewScope'
 import ExportButton from '@/components/result/ExportButton'
-import { AnalysisResult } from '@/types'
+import { AnalysisResult, PortfolioPurpose } from '@/types'
 import {
   DESIGN_TYPE_LABELS,
   REVIEW_PURPOSE_LABELS,
   WORK_FORM_LABELS,
 } from '@/lib/single-work-scenario'
 
+const PORTFOLIO_PURPOSE_LABELS: Record<PortfolioPurpose, string> = {
+  job: '求职作品集',
+  graduate: '考研/升学',
+  course: '课程作业',
+  competition: '比赛投稿',
+  showcase: '视觉展示',
+  unsure: '用途待判断',
+}
+
 export default function ResultPage() {
   const params = useParams()
-  const [result, setResult] = useState<AnalysisResult | null>(null)
-  const [loading, setLoading] = useState(true)
+  const resultId = Array.isArray(params.id) ? params.id[0] : params.id
+  const [result] = useState<AnalysisResult | null>(() => {
+    if (typeof window === 'undefined') return null
 
-  useEffect(() => {
     const stored = sessionStorage.getItem('lastAnalysis')
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        if (parsed.id === params.id) {
-          setResult(parsed)
-        }
+        if (parsed.id === resultId) return parsed
       } catch {
         // ignore invalid session data
       }
     }
-    setLoading(false)
-  }, [params.id])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 rounded-full border-2 border-[#6B9CFF] border-t-transparent animate-spin" />
-      </div>
-    )
-  }
+    return null
+  })
 
   if (!result) {
     return (
@@ -97,6 +96,11 @@ export default function ResultPage() {
               {REVIEW_PURPOSE_LABELS[result.reviewPurpose]}
             </span>
           )}
+          {result.mode === 'portfolio' && result.portfolioPurpose && (
+            <span className="rounded-full border border-[#D6A85A]/22 bg-[#D6A85A]/8 px-3 py-1 text-xs font-medium text-[#D6A85A]">
+              {PORTFOLIO_PURPOSE_LABELS[result.portfolioPurpose]}
+            </span>
+          )}
         </div>
       </div>
 
@@ -131,10 +135,16 @@ export default function ResultPage() {
 
         <DimensionSummary dimensions={result.dimensions} />
 
-        {result.mode === 'portfolio' && (result.targetCompany || result.targetRole) && (
+        {result.mode === 'portfolio' && (
           <section className="report-section">
-            <h2 className="report-title text-lg mb-4">目标岗位</h2>
+            <h2 className="report-title text-lg mb-4">评审背景</h2>
             <div className="report-inline-panel space-y-2 p-5">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-[#F4EFE6]/38">用途：</span>
+                <span className="text-[#F4EFE6]/70">
+                  {PORTFOLIO_PURPOSE_LABELS[result.portfolioPurpose ?? 'unsure']}
+                </span>
+              </div>
               {result.targetCompany && (
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-[#F4EFE6]/38">公司：</span>
@@ -147,10 +157,34 @@ export default function ResultPage() {
                   <span className="text-[#F4EFE6]/70">{result.targetRole}</span>
                 </div>
               )}
+              {result.targetSchool && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-[#F4EFE6]/38">院校：</span>
+                  <span className="text-[#F4EFE6]/70">{result.targetSchool}</span>
+                </div>
+              )}
+              {result.targetMajor && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-[#F4EFE6]/38">方向：</span>
+                  <span className="text-[#F4EFE6]/70">{result.targetMajor}</span>
+                </div>
+              )}
               {result.jobDescription && (
                 <div className="mt-3 rounded-lg bg-[#11100E]/48 p-3">
                   <p className="text-xs text-[#F4EFE6]/34 mb-1">JD 摘要</p>
                   <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.jobDescription}</p>
+                </div>
+              )}
+              {result.applicationRequirement && (
+                <div className="mt-3 rounded-lg bg-[#11100E]/48 p-3">
+                  <p className="text-xs text-[#F4EFE6]/34 mb-1">申请要求</p>
+                  <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.applicationRequirement}</p>
+                </div>
+              )}
+              {result.portfolioGoal && (
+                <div className="mt-3 rounded-lg bg-[#11100E]/48 p-3">
+                  <p className="text-xs text-[#F4EFE6]/34 mb-1">评审目标</p>
+                  <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.portfolioGoal}</p>
                 </div>
               )}
             </div>

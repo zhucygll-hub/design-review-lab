@@ -3,6 +3,7 @@ import {
   DesignType,
   DimensionScore,
   MentorReview,
+  PortfolioPurpose,
   ReviewPurpose,
   Suggestion,
   WorkForm,
@@ -346,8 +347,11 @@ export function buildSingleWorkFeedback(input: FeedbackInput): GeneratedFeedback
 type PortfolioFeedbackInput = {
   dimensions: DimensionScore[]
   scoreNumeric: number
+  portfolioPurpose?: PortfolioPurpose
   targetCompany?: string
   targetRole?: string
+  targetSchool?: string
+  targetMajor?: string
 }
 
 export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): GeneratedFeedback {
@@ -357,7 +361,33 @@ export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): G
   const secondWeakest = sorted[sorted.length - 2] ?? weakest
   const strongestDetail = compactDetail(strongest)
   const weakestDetail = compactDetail(weakest)
-  const target = input.targetRole || input.targetCompany || '目标岗位'
+  const purpose = input.portfolioPurpose ?? 'unsure'
+  const target =
+    purpose === 'job'
+      ? input.targetRole || input.targetCompany || '求职方向'
+      : purpose === 'graduate'
+        ? input.targetMajor || input.targetSchool || '申请方向'
+        : purpose === 'course'
+          ? '课程作业目标'
+          : purpose === 'competition'
+            ? '比赛投稿目标'
+            : purpose === 'showcase'
+              ? '视觉展示目标'
+              : '当前目标场景'
+  const interviewerLead =
+    purpose === 'job'
+      ? `如果投递${target}`
+      : `如果用于${target}`
+  const interviewerFocus =
+    purpose === 'job'
+      ? '面试官判断你的设计决策'
+      : purpose === 'graduate'
+        ? '导师判断你的研究潜力和方向一致性'
+        : purpose === 'competition'
+          ? '评委快速理解你的主题和差异点'
+          : purpose === 'showcase'
+            ? '观看者判断你的视觉风格和系列能力'
+            : '评审者判断这份作品集是否适合当前用途'
 
   const mentorReviews: MentorReview[] = [
     {
@@ -375,8 +405,8 @@ export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): G
     {
       role: 'interviewer',
       roleLabel: '企业面试官',
-      content: `如果投递${target}，${strongest.name}（${strongestDetail}）会是面试中有力的讨论素材。但当前可见页面里${weakest.name}（${weakestDetail}）不足以支撑面试官判断你的设计决策——建议在每个项目首页加3-4行文字标注：问题是什么→你做了什么→结果是什么→你学到了什么。面试时可以直接指着这些标注展开讲述。`,
-      highlights: ['每个项目首页加决策标注', `准备${secondWeakest.name}的复盘回答`],
+      content: `${interviewerLead}，${strongest.name}（${strongestDetail}）会是有力的讨论素材。但当前可见页面里${weakest.name}（${weakestDetail}）不足以支撑${interviewerFocus}——建议在每个项目首页加3-4行文字标注：问题是什么→你做了什么→结果是什么→你学到了什么。`,
+      highlights: ['每个项目首页加决策标注', `准备${secondWeakest.name}的解释材料`],
     },
     {
       role: 'ux_researcher',

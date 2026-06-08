@@ -24,7 +24,7 @@ const ENTRIES = [
   {
     key: 'portfolio',
     title: '作品集评审',
-    description: '上传完整作品集 PDF，从项目质量、设计思维到岗位匹配度全面审阅',
+    description: '上传完整作品集 PDF，从项目质量、设计思维到使用场景适配全面审阅',
     tag: '支持 PDF · 7维加权评分',
     href: '/portfolio',
     iconClassName: 'border-[#7EB98E]/18 bg-[#7EB98E]/8 text-[#7EE0A0] group-hover:text-[#F4EFE6]',

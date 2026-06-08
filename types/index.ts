@@ -39,6 +39,7 @@ export type AnalysisMode = 'single' | 'portfolio'
 export type DesignType = 'commercial' | 'concept'
 export type WorkForm = 'board' | 'physical_model' | 'ui' | 'poster' | 'packaging_brand' | 'other'
 export type ReviewPurpose = 'course' | 'competition' | 'job' | 'practice'
+export type PortfolioPurpose = 'job' | 'graduate' | 'course' | 'competition' | 'showcase' | 'unsure'
 
 export interface ScoreBreakdown {
   rawWeightedScore: number       // 七维加权原始分（红牌封顶前）
@@ -78,9 +79,14 @@ export interface AnalysisResult {
   workForm?: WorkForm
   reviewPurpose?: ReviewPurpose
   // Portfolio-specific
+  portfolioPurpose?: PortfolioPurpose
   targetCompany?: string
   targetRole?: string
   jobDescription?: string
+  targetSchool?: string
+  targetMajor?: string
+  applicationRequirement?: string
+  portfolioGoal?: string
   portfolioReviewScope?: PortfolioReviewScope
   // Calibration
   calibrationNote?: string   // AI-generated explanation of why this score tier

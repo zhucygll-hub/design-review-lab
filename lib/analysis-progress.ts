@@ -1,4 +1,4 @@
-import { DesignType, ReviewPurpose, WorkForm } from '@/types'
+import { DesignType, PortfolioPurpose, ReviewPurpose, WorkForm } from '@/types'
 
 export interface AnalysisProgressStep {
   label: string
@@ -64,14 +64,23 @@ export function buildSingleWorkProgressSteps(
   ]
 }
 
-export function buildPortfolioProgressSteps(): AnalysisProgressStep[] {
+const PORTFOLIO_PURPOSE_STEP: Record<PortfolioPurpose, AnalysisProgressStep> = {
+  job: { label: '匹配求职目标', detail: '结合岗位或公司信息判断项目排序和表达重点' },
+  graduate: { label: '匹配升学申请目标', detail: '判断研究潜力、个人方向和申请说服力是否清楚' },
+  course: { label: '对照课程作业目标', detail: '检查课题回应、方法掌握和阶段成果是否完整' },
+  competition: { label: '判断比赛投稿力度', detail: '检查主题冲击力、评委可读性和差异化表达' },
+  showcase: { label: '评估视觉展示价值', detail: '判断风格统一、图像质量和系列表达是否成立' },
+  unsure: { label: '判断适合使用场景', detail: '先识别作品集更适合求职、升学、课程、比赛还是展示' },
+}
+
+export function buildPortfolioProgressSteps(purpose: PortfolioPurpose = 'unsure'): AnalysisProgressStep[] {
   return [
     { label: '检查项目完整度', detail: '浏览作品集结构、项目数量和页面组织' },
     { label: '判断项目质量', detail: '区分核心项目、弱项目和需要删减的页面' },
     { label: '审阅设计思维', detail: '查看问题定义、过程证据和方案取舍是否清楚' },
     { label: '分析视觉表达能力', detail: '判断版式、图像、字体和整体调性是否稳定' },
     { label: '评估差异化竞争力', detail: '寻找能让作品集被记住的能力证明' },
-    { label: '匹配目标岗位', detail: '结合岗位或公司信息判断项目排序和表达重点' },
+    PORTFOLIO_PURPOSE_STEP[purpose],
     { label: '生成作品集修改路线', detail: '整理优先删改页面、补充内容和面试表达建议' },
   ]
 }

@@ -9,7 +9,7 @@ import {
 } from '@/lib/ark-utils'
 import { buildPortfolioFeedbackFallback } from '@/lib/single-work-feedback'
 import { shouldUseAIReviews, validateMentorReviews, shouldUseAIFeedback, validateFeedbackContent } from '@/lib/mentor-review-quality'
-import { AnalysisResult } from '@/types'
+import { AnalysisResult, PortfolioPurpose } from '@/types'
 
 export const maxDuration = 120
 
@@ -21,6 +21,14 @@ const ARK_BASE_URL = process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.
 // Files >12MB should be handled client-side via image conversion before reaching this route.
 const MAX_PDF_BYTES = 12 * 1024 * 1024
 const AI_TIMEOUT_MS = 105_000
+const PORTFOLIO_PURPOSES = new Set<PortfolioPurpose>([
+  'job',
+  'graduate',
+  'course',
+  'competition',
+  'showcase',
+  'unsure',
+])
 
 // Edge-compatible base64 encoder (no Buffer API in Edge Functions)
 function arrayBufferToBase64(bytes: Uint8Array): string {
@@ -33,6 +41,18 @@ function arrayBufferToBase64(bytes: Uint8Array): string {
 
 function createRequestId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+}
+
+function readOptionalString(formData: FormData, key: string): string | undefined {
+  const value = (formData.get(key) as string | null)?.trim()
+  return value || undefined
+}
+
+function readPortfolioPurpose(formData: FormData): PortfolioPurpose {
+  const value = readOptionalString(formData, 'portfolioPurpose')
+  return value && PORTFOLIO_PURPOSES.has(value as PortfolioPurpose)
+    ? (value as PortfolioPurpose)
+    : 'unsure'
 }
 
 function softenSampledEvidenceClaim(text: string): string {
@@ -81,9 +101,14 @@ export async function POST(request: NextRequest) {
     console.log(`[portfolio:${requestId}] Reading form data`)
     const formData = await request.formData()
     const file = formData.get('file') as File | null
-    const targetCompany = (formData.get('targetCompany') as string) || undefined
-    const targetRole = (formData.get('targetRole') as string) || undefined
-    const jobDescription = (formData.get('jobDescription') as string) || undefined
+    const portfolioPurpose = readPortfolioPurpose(formData)
+    const targetCompany = readOptionalString(formData, 'targetCompany')
+    const targetRole = readOptionalString(formData, 'targetRole')
+    const jobDescription = readOptionalString(formData, 'jobDescription')
+    const targetSchool = readOptionalString(formData, 'targetSchool')
+    const targetMajor = readOptionalString(formData, 'targetMajor')
+    const applicationRequirement = readOptionalString(formData, 'applicationRequirement')
+    const portfolioGoal = readOptionalString(formData, 'portfolioGoal')
 
     // Check for image-based submission (large PDF converted client-side)
     const imageFiles = formData.getAll('images') as File[]
@@ -101,13 +126,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Build prompts (same for both modes)
-    const { system, user: baseUser } = buildPortfolioAnalysisPrompt(
+    const { system, user: baseUser } = buildPortfolioAnalysisPrompt({
+      purpose: portfolioPurpose,
       targetCompany,
       targetRole,
-      jobDescription
-    )
+      jobDescription,
+      targetSchool,
+      targetMajor,
+      applicationRequirement,
+      portfolioGoal,
+    })
 
-    let response: Response
     let content: string | undefined
 
     if (isImageMode) {
@@ -276,9 +305,14 @@ export async function POST(request: NextRequest) {
     rawResult.id = requestId
     rawResult.createdAt = new Date().toISOString()
     rawResult.mode = 'portfolio'
+    rawResult.portfolioPurpose = portfolioPurpose
     rawResult.targetCompany = targetCompany
     rawResult.targetRole = targetRole
     rawResult.jobDescription = jobDescription
+    rawResult.targetSchool = targetSchool
+    rawResult.targetMajor = targetMajor
+    rawResult.applicationRequirement = applicationRequirement
+    rawResult.portfolioGoal = portfolioGoal
     rawResult.imageUrl = ''
     rawResult.fileName = file?.name ?? `作品集（${imageFiles.length} 页图片）`
 
@@ -320,8 +354,11 @@ export async function POST(request: NextRequest) {
         const fallback = buildPortfolioFeedbackFallback({
           dimensions: result.dimensions,
           scoreNumeric: result.scoreNumeric,
+          portfolioPurpose: result.portfolioPurpose,
           targetCompany: result.targetCompany,
           targetRole: result.targetRole,
+          targetSchool: result.targetSchool,
+          targetMajor: result.targetMajor,
         })
         result.mentorReviews = fallback.mentorReviews
         result.pros = result.pros ?? fallback.pros
@@ -336,8 +373,11 @@ export async function POST(request: NextRequest) {
       const fallback = buildPortfolioFeedbackFallback({
         dimensions: result.dimensions,
         scoreNumeric: result.scoreNumeric,
+        portfolioPurpose: result.portfolioPurpose,
         targetCompany: result.targetCompany,
         targetRole: result.targetRole,
+        targetSchool: result.targetSchool,
+        targetMajor: result.targetMajor,
       })
       result.mentorReviews = fallback.mentorReviews
       result.pros = result.pros ?? fallback.pros
@@ -359,8 +399,11 @@ export async function POST(request: NextRequest) {
         const fallback = buildPortfolioFeedbackFallback({
           dimensions: result.dimensions,
           scoreNumeric: result.scoreNumeric,
+          portfolioPurpose: result.portfolioPurpose,
           targetCompany: result.targetCompany,
           targetRole: result.targetRole,
+          targetSchool: result.targetSchool,
+          targetMajor: result.targetMajor,
         })
         if (aiPortfolioPros === result.pros) result.pros = fallback.pros
         if (aiPortfolioCons === result.cons) result.cons = fallback.cons
