@@ -37,8 +37,8 @@ export default function SuggestionsSection({ suggestions }: SuggestionsSectionPr
   const routeItems = [...priorities, ...quickFixes]
 
   return (
-    <div className="report-panel overflow-hidden">
-      <div className="border-b border-[#F4EFE6]/10 p-6 md:p-7">
+    <div>
+      <div className="mb-6">
         <p className="report-kicker">下一版修改路线</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-0.025em] text-[#F4EFE6]">
           按这个顺序改，不要同时乱改
@@ -48,7 +48,7 @@ export default function SuggestionsSection({ suggestions }: SuggestionsSectionPr
         </p>
       </div>
 
-      <div className="divide-y divide-[#F4EFE6]/8">
+      <div className="border-t border-[#F4EFE6]/10">
         {routeItems.map((suggestion, index) => {
           const isPriority = suggestion.type === 'priority'
           return (
@@ -58,7 +58,7 @@ export default function SuggestionsSection({ suggestions }: SuggestionsSectionPr
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.04 }}
-              className="grid gap-4 p-5 md:grid-cols-[86px_1fr_170px] md:items-start"
+              className="grid gap-4 border-b border-[#F4EFE6]/8 py-5 md:grid-cols-[92px_1fr_170px] md:items-start"
             >
               <div className="flex items-center gap-3">
                 <span

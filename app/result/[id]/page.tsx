@@ -58,7 +58,7 @@ export default function ResultPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 pb-12">
+    <div className="mx-auto max-w-5xl pb-14">
       <div className="report-shell rounded-2xl p-5 md:p-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
@@ -99,7 +99,7 @@ export default function ResultPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="mt-6 flex items-center justify-between">
         <Link
           href={result.mode === 'portfolio' ? '/portfolio' : '/analyze'}
           className="flex items-center gap-2 text-sm text-[#F4EFE6]/44 hover:text-[#F4EFE6] transition-colors"
@@ -112,57 +112,67 @@ export default function ResultPage() {
         </Link>
       </div>
 
-      <section>
-        <ScoreBadge
-          score={result.score}
-          scoreLabel={result.scoreLabel}
-          scoreNumeric={result.scoreNumeric}
-          evidence={result.scoreBreakdown ? <ScoreEvidence result={result} /> : undefined}
-        />
-      </section>
-
-      <ResultInsightPanel result={result} />
-
-      <DimensionSummary dimensions={result.dimensions} />
-
-      {result.mode === 'portfolio' && (result.targetCompany || result.targetRole) && (
-        <section className="report-panel p-6">
-          <h2 className="report-title text-lg mb-3">目标岗位</h2>
-          <div className="space-y-2">
-            {result.targetCompany && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-[#F4EFE6]/38">公司：</span>
-                <span className="text-[#F4EFE6]/70">{result.targetCompany}</span>
-              </div>
-            )}
-            {result.targetRole && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-[#F4EFE6]/38">岗位：</span>
-                <span className="text-[#F4EFE6]/70">{result.targetRole}</span>
-              </div>
-            )}
-            {result.jobDescription && (
-              <div className="mt-2 p-3 rounded-lg bg-[#11100E]/48">
-                <p className="text-xs text-[#F4EFE6]/34 mb-1">JD 摘要</p>
-                <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.jobDescription}</p>
-              </div>
-            )}
-          </div>
+      <div className="mt-8 space-y-10">
+        <section>
+          <ScoreBadge
+            score={result.score}
+            scoreLabel={result.scoreLabel}
+            scoreNumeric={result.scoreNumeric}
+            evidence={result.scoreBreakdown ? <ScoreEvidence result={result} /> : undefined}
+          />
         </section>
-      )}
 
-      <section>
-        <h2 className="report-title text-lg mb-4">导师点评</h2>
-        <MentorReview reviews={result.mentorReviews} />
-      </section>
+        <ResultInsightPanel result={result} />
 
-      <section>
-        <ProsConsSection pros={result.pros} cons={result.cons} />
-      </section>
+        <DimensionSummary dimensions={result.dimensions} />
 
-      <section>
-        <SuggestionsSection suggestions={result.suggestions} />
-      </section>
+        {result.mode === 'portfolio' && (result.targetCompany || result.targetRole) && (
+          <section className="report-section">
+            <h2 className="report-title text-lg mb-4">目标岗位</h2>
+            <div className="report-inline-panel space-y-2 p-5">
+              {result.targetCompany && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-[#F4EFE6]/38">公司：</span>
+                  <span className="text-[#F4EFE6]/70">{result.targetCompany}</span>
+                </div>
+              )}
+              {result.targetRole && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-[#F4EFE6]/38">岗位：</span>
+                  <span className="text-[#F4EFE6]/70">{result.targetRole}</span>
+                </div>
+              )}
+              {result.jobDescription && (
+                <div className="mt-3 rounded-lg bg-[#11100E]/48 p-3">
+                  <p className="text-xs text-[#F4EFE6]/34 mb-1">JD 摘要</p>
+                  <p className="text-xs text-[#F4EFE6]/48 line-clamp-3">{result.jobDescription}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        <section className="report-section">
+          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="report-kicker">四个视角</p>
+              <h2 className="report-title mt-1 text-xl">导师点评</h2>
+            </div>
+            <p className="max-w-sm text-sm leading-6 text-[#F4EFE6]/42">
+              不同角色会从课题、审美、表达和场景切入，帮你判断作品该怎么被解释。
+            </p>
+          </div>
+          <MentorReview reviews={result.mentorReviews} />
+        </section>
+
+        <section className="report-section">
+          <ProsConsSection pros={result.pros} cons={result.cons} />
+        </section>
+
+        <section className="report-section">
+          <SuggestionsSection suggestions={result.suggestions} />
+        </section>
+      </div>
     </div>
   )
 }

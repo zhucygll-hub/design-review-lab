@@ -20,19 +20,19 @@ export default function MentorReview({ reviews }: MentorReviewProps) {
   const activeReview = reviews.find((review) => review.role === activeTab)
 
   return (
-    <div className="report-panel overflow-hidden">
-      <div className="flex overflow-x-auto border-b border-[#F4EFE6]/8 bg-[#11100E]/28 scrollbar-none">
+    <div>
+      <div className="flex overflow-x-auto border-b border-[#F4EFE6]/10 scrollbar-none">
         {ROLE_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-3 px-5 py-4 text-sm font-medium whitespace-nowrap transition-all duration-200 border-b-2 -mb-px ${
+            className={`flex items-center gap-3 px-4 py-3 text-sm font-medium whitespace-nowrap transition-all duration-200 border-b-2 -mb-px ${
               activeTab === tab.key
                 ? 'border-[#D6A85A] text-[#F4EFE6]'
                 : 'border-transparent text-[#F4EFE6]/42 hover:text-[#F4EFE6]/72'
             }`}
           >
-            <span className="rounded-full border border-[#F4EFE6]/10 px-2 py-0.5 text-[11px] text-[#F4EFE6]/48">
+            <span className="rounded-full bg-[#F4EFE6]/5 px-2 py-0.5 text-[11px] text-[#F4EFE6]/48">
               {tab.short}
             </span>
             <span>{tab.label}</span>
@@ -47,18 +47,18 @@ export default function MentorReview({ reviews }: MentorReviewProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.25 }}
-          className="p-6 md:p-7"
+          className="py-6"
         >
           {activeReview && (
-            <div className="space-y-5">
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_260px]">
               <p className="max-w-3xl text-[15px] leading-8 text-[#F4EFE6]/72">
                 {activeReview.content}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap content-start gap-2 md:justify-end">
                 {activeReview.highlights.map((highlight, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center rounded-full border border-[#F4EFE6]/10 bg-[#F4EFE6]/4 px-3 py-1 text-xs text-[#F4EFE6]/52"
+                    className="inline-flex items-center rounded-full bg-[#F4EFE6]/5 px-3 py-1 text-xs text-[#F4EFE6]/54"
                   >
                     {highlight}
                   </span>

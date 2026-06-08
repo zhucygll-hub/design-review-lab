@@ -22,7 +22,7 @@ export default function DimensionSummary({ dimensions }: DimensionSummaryProps) 
   const highDimension = [...validDimensions].sort((a, b) => b.score - a.score)[0]
 
   return (
-    <section className="report-panel p-6">
+    <section className="report-section">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="report-title text-lg mb-1">维度分析</h2>
@@ -43,9 +43,9 @@ export default function DimensionSummary({ dimensions }: DimensionSummaryProps) 
         <RadarChart dimensions={dimensions} />
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-3">
+      <div className="mt-6 grid gap-0 overflow-hidden rounded-xl border border-[#F4EFE6]/8 md:grid-cols-3">
         {lowDimensions.map((dimension, index) => (
-          <div key={dimension.name} className="rounded-xl border border-[#D6A85A]/16 bg-[#D6A85A]/6 p-4">
+          <div key={dimension.name} className="border-b border-[#F4EFE6]/8 p-4 md:border-b-0 md:border-r">
             <p className="text-xs font-medium text-[#D6A85A]">
               {index === 0 ? '最低维度' : '第二短板'}
             </p>
@@ -57,7 +57,7 @@ export default function DimensionSummary({ dimensions }: DimensionSummaryProps) 
         ))}
 
         {highDimension && (
-          <div className="rounded-xl border border-[#7EB98E]/16 bg-[#7EB98E]/6 p-4">
+          <div className="p-4">
             <p className="text-xs font-medium text-[#7EE0A0]">最高维度</p>
             <div className="mt-2 flex items-baseline justify-between gap-3">
               <p className="text-sm font-semibold text-[#F4EFE6]">{highDimension.name}</p>
