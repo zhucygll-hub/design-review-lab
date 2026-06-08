@@ -363,8 +363,8 @@ export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): G
     {
       role: 'graduation_tutor',
       roleLabel: '毕业导师',
-      content: `这份作品集中${strongestDetail}完成度较好，但${weakestDetail}会让导师在答辩中追问你的方法论。建议在${weakest.name}相关的项目中补充：设计推导过程（问题→调研→方向→方案，各1-2页）、关键决策依据（每个主要设计选择附1句话说明为什么）、以及至少一轮的用户反馈或测试结果。放在每个项目的起始页或关键页旁边。`,
-      highlights: [strongest.name, `在${weakest.name}项目中补过程记录和决策依据`],
+      content: `这份作品集中${strongestDetail}完成度较好，但当前可见页面里${weakestDetail}会让导师追问方法论。建议在${weakest.name}相关项目的首页或关键成果页旁补充：设计推导过程（问题→调研→方向→方案，各1-2页）、关键决策依据（每个主要设计选择附1句话说明为什么）、以及至少一轮反馈或测试结果。若这些内容已在其他页面存在，也应前置索引。`,
+      highlights: [strongest.name, `把${weakest.name}过程证据前置到项目首页`],
     },
     {
       role: 'design_director',
@@ -375,7 +375,7 @@ export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): G
     {
       role: 'interviewer',
       roleLabel: '企业面试官',
-      content: `如果投递${target}，${strongest.name}（${strongestDetail}）会是面试中有力的讨论素材。但${weakest.name}（${weakestDetail}）会让面试官追问你的设计决策——建议在每个项目首页加3-4行文字标注：问题是什么→你做了什么→结果是什么→你学到了什么。面试时可以直接指着这些标注展开讲述。`,
+      content: `如果投递${target}，${strongest.name}（${strongestDetail}）会是面试中有力的讨论素材。但当前可见页面里${weakest.name}（${weakestDetail}）不足以支撑面试官判断你的设计决策——建议在每个项目首页加3-4行文字标注：问题是什么→你做了什么→结果是什么→你学到了什么。面试时可以直接指着这些标注展开讲述。`,
       highlights: ['每个项目首页加决策标注', `准备${secondWeakest.name}的复盘回答`],
     },
     {
@@ -406,8 +406,8 @@ export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): G
       : `${secondWeakest.name}（${compactDetail(secondWeakest)}）还需要更充分的证据——在相关项目中增加1-2页推导或验证内容`
 
   const cons = [
-    `${weakest.name}（${weakestDetail}）是当前翻页体验中最明显的问题——优先在这个维度涉及的1-2个项目中补充过程记录和决策依据，不要让评审觉得"只有结果没有思考"`,
-    pfConsSecond,
+    `${weakest.name}（${weakestDetail}）是当前可见页面中最明显的问题——优先在这个维度涉及的1-2个项目首页补充过程记录入口和决策依据，避免评审者在未看到完整过程时误判为"只有结果没有思考"`,
+    pfConsSecond.replace('还需要更充分的证据', '在当前可见页面中还需要更充分的证据'),
     `作品集的视觉系统（字体/色彩/网格）在不同页面之间不够统一——选定一套规范后逐页检查，不一致的页面手动调整到统一标准`,
   ]
 
@@ -415,7 +415,7 @@ export function buildPortfolioFeedbackFallback(input: PortfolioFeedbackInput): G
     {
       id: 's1',
       type: 'priority',
-      content: `优先补强${weakest.name}：在${weakest.name}最弱的1-2个项目中，各增加1-2页过程记录（草图/研究/迭代/验证）和关键决策说明`,
+      content: `优先补强${weakest.name}：在${weakest.name}最弱的1-2个项目首页，增加过程记录索引（草图/研究/迭代/验证）和关键决策说明`,
       effort: 'medium',
       impact: 'high',
     },

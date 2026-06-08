@@ -35,6 +35,37 @@ function createRequestId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 }
 
+function softenSampledEvidenceClaim(text: string): string {
+  return text
+    .replace(/作品集没有(调研|研究|建模|草图|过程|推导|文字说明|设计思维)/g, '重点分析页中未看到$1')
+    .replace(/用户没有(调研|研究|建模|草图|过程|推导|文字说明|设计思维)/g, '重点分析页中未看到$1')
+    .replace(/没有明确的(调研|研究|建模|草图|过程|推导|文字说明|设计思维)/g, '重点分析页中未看到明确的$1')
+    .replace(/缺少(调研|研究|建模|草图|过程|推导|文字说明|设计思维)/g, '重点分析页中未看到$1')
+    .replace(/无(调研|研究|建模|草图|过程|推导|文字说明|设计思维)/g, '重点分析页中未看到$1')
+}
+
+function applySampledEvidenceBoundary(result: AnalysisResult): void {
+  result.redFlags = (result.redFlags ?? []).map(softenSampledEvidenceClaim)
+  result.calibrationNote = result.calibrationNote
+    ? softenSampledEvidenceClaim(result.calibrationNote)
+    : result.calibrationNote
+  result.dimensions = (result.dimensions ?? []).map((dimension) => ({
+    ...dimension,
+    description: softenSampledEvidenceClaim(dimension.description),
+  }))
+  result.mentorReviews = (result.mentorReviews ?? []).map((review) => ({
+    ...review,
+    content: softenSampledEvidenceClaim(review.content),
+    highlights: (review.highlights ?? []).map(softenSampledEvidenceClaim),
+  }))
+  result.pros = (result.pros ?? []).map(softenSampledEvidenceClaim)
+  result.cons = (result.cons ?? []).map(softenSampledEvidenceClaim)
+  result.suggestions = (result.suggestions ?? []).map((suggestion) => ({
+    ...suggestion,
+    content: softenSampledEvidenceClaim(suggestion.content),
+  }))
+}
+
 export async function POST(request: NextRequest) {
   const requestId = createRequestId()
   const startedAt = Date.now()
@@ -107,7 +138,8 @@ export async function POST(request: NextRequest) {
         `\n本次不是只提取前几页，而是智能抽样 ${imageFiles.length} 页进行重点评审。` +
         `\n抽样页码：${selectedPages.length > 0 ? selectedPages.join('、') : '未提供页码，请按图片顺序判断'}` +
         `\n图片顺序与上述页码一一对应，例如第 1 张图片代表 PDF 第 ${selectedPages[0] ?? 1} 页。` +
-        `\n${reviewScopeNote || '请基于这些代表性页面评价作品集整体结构、项目顺序、视觉一致性和关键短板，并在文字中明确引用页码。'}`
+        `\n${reviewScopeNote || '请基于这些代表性页面评价作品集整体结构、项目顺序、视觉一致性和关键短板，并在文字中明确引用页码。'}` +
+        `\n证据边界：凡是涉及调研、建模、过程、文字说明、项目完整度的判断，只能写"本次抽样页中未看到/重点分析页中未呈现"，不得写成"作品集没有/用户没有"。如果某些内容可能存在于未抽样页面，请建议用户把它前置到项目首页或关键页旁。`
 
       // Use Chat Completions API with image_url (same as single-work mode)
       const imageContentBlocks = imageUris.map((uri) => ({
@@ -261,8 +293,9 @@ export async function POST(request: NextRequest) {
           : Array.from({ length: imageFiles.length }, (_, index) => index + 1),
         analyzedPageCount: imageFiles.length,
         strategy: 'smart_sample',
-        note: reviewScopeNote || `已智能抽样 ${imageFiles.length} 页进行重点评审。`,
+        note: reviewScopeNote || `已智能抽样 ${imageFiles.length} 页进行重点评审。涉及未抽样页面的信息，系统不会做绝对判断。`,
       }
+      applySampledEvidenceBoundary(result)
     }
 
     // ── Mentor review quality control ──
@@ -338,6 +371,10 @@ export async function POST(request: NextRequest) {
           `[portfolio:${requestId}] AI pros/cons/suggestions accepted (quality=${feedbackReport.score}/100, issues=${feedbackReport.issues.length})`
         )
       }
+    }
+
+    if (isImageMode) {
+      applySampledEvidenceBoundary(result)
     }
 
     result.scoreBreakdown = {
