@@ -7,8 +7,8 @@ import { compressImageClient } from '@/lib/image-compress'
 import { buildSingleWorkProgressSteps } from '@/lib/analysis-progress'
 
 interface UploadState {
-  file: File | null
-  previewUrl: string | null
+  files: File[]
+  previewUrls: string[]
   isUploading: boolean
   isWaitingForApi: boolean
   progress: number
@@ -22,8 +22,8 @@ interface UploadState {
 
 export function useAnalysis() {
   const [upload, setUpload] = useState<UploadState>({
-    file: null,
-    previewUrl: null,
+    files: [],
+    previewUrls: [],
     isUploading: false,
     isWaitingForApi: false,
     progress: 0,
@@ -36,11 +36,11 @@ export function useAnalysis() {
   })
   const [result, setResult] = useState<AnalysisResult | null>(null)
 
-  const handleFile = useCallback((file: File) => {
-    const previewUrl = URL.createObjectURL(file)
+  const handleFiles = useCallback((files: File[]) => {
+    const previewUrls = files.map((f) => URL.createObjectURL(f))
     setUpload((prev) => ({
-      file,
-      previewUrl,
+      files,
+      previewUrls,
       isUploading: false,
       isWaitingForApi: false,
       progress: 0,
@@ -55,7 +55,7 @@ export function useAnalysis() {
   }, [])
 
   const startAnalysis = useCallback(async () => {
-    if (!upload.file || !upload.previewUrl) return
+    if (upload.files.length === 0) return
 
     setUpload((prev) => ({
       ...prev,
@@ -68,38 +68,47 @@ export function useAnalysis() {
     }))
 
     try {
-      // If PDF, convert first page to image first
-      let imageFile: File | Blob = upload.file
-      const isPdf = upload.file.type === 'application/pdf'
+      const formData = new FormData()
 
-      if (isPdf) {
-        setUpload((prev) => ({
-          ...prev,
-          currentDimension: '正在提取 PDF 第一页…',
-        }))
-        // Dynamic import to avoid SSR — pdfjs-dist uses DOMMatrix (browser-only)
-        const { pdfFirstPageToImage } = await import('@/lib/pdf-to-image')
-        const imageBlob = await pdfFirstPageToImage(upload.file)
-        if (!imageBlob) {
+      // Process each file: PDF → single page image, otherwise compress
+      for (let i = 0; i < upload.files.length; i++) {
+        const file = upload.files[i]
+        let imageFile: File | Blob = file
+        const isPdf = file.type === 'application/pdf'
+
+        if (isPdf) {
           setUpload((prev) => ({
             ...prev,
-            isUploading: false,
-            error: 'PDF 转换失败，请将 PDF 的第一页导出为 JPG/PNG 后上传，或使用「作品集评审」功能上传完整 PDF。',
+            currentDimension: '正在提取 PDF 第一页…',
           }))
-          return
+          const { pdfFirstPageToImage } = await import('@/lib/pdf-to-image')
+          const imageBlob = await pdfFirstPageToImage(file)
+          if (!imageBlob) {
+            setUpload((prev) => ({
+              ...prev,
+              isUploading: false,
+              error: 'PDF 转换失败，请将 PDF 的第一页导出为 JPG/PNG 后上传，或使用「作品集评审」功能上传完整 PDF。',
+            }))
+            return
+          }
+          imageFile = new File(
+            [imageBlob],
+            file.name.replace(/\.pdf$/i, '.jpg'),
+            { type: 'image/jpeg' }
+          )
         }
-        // Create a File-like name for the converted image
-        imageFile = new File([imageBlob], upload.file.name.replace(/\.pdf$/i, '.jpg'), { type: 'image/jpeg' })
+
+        // Compress each image
+        const compressed = await compressImageClient(
+          imageFile instanceof File ? imageFile : new File([imageFile], `image-${i}.jpg`, { type: 'image/jpeg' }),
+          1024,
+          0.72
+        )
+        const fileName = file.name.replace(/\.pdf$/i, isPdf ? '.jpg' : file.name)
+        formData.append('files', compressed, fileName)
       }
 
-      // Compress image client-side to stay under EdgeOne body limit
-      const compressed = await compressImageClient(
-        imageFile instanceof File ? imageFile : new File([imageFile], 'image.jpg', { type: 'image/jpeg' }),
-        1024,
-        0.72
-      )
-      const formData = new FormData()
-      formData.append('file', compressed, upload.file.name.replace(/\.pdf$/i, isPdf ? '.jpg' : upload.file.name))
+      formData.append('fileCount', String(upload.files.length))
       formData.append('designType', upload.designType)
       formData.append('workForm', upload.workForm)
       formData.append('reviewPurpose', upload.reviewPurpose)
@@ -160,8 +169,10 @@ export function useAnalysis() {
 
       const analysisResult: AnalysisResult = {
         ...parsed.data,
-        imageUrl: upload.previewUrl,
-        fileName: upload.file.name,
+        imageUrl: upload.previewUrls[0] ?? '',
+        fileName: upload.files[0]?.name ?? '',
+        imageUrls: upload.previewUrls,
+        fileNames: upload.files.map((f) => f.name),
       }
 
       setResult(analysisResult)
@@ -189,7 +200,7 @@ export function useAnalysis() {
         error: message,
       }))
     }
-  }, [upload.designType, upload.file, upload.previewUrl, upload.reviewPurpose, upload.workForm])
+  }, [upload.designType, upload.files, upload.previewUrls, upload.reviewPurpose, upload.workForm])
 
   const setDesignType = useCallback((designType: DesignType) => {
     setUpload((prev) => ({ ...prev, designType }))
@@ -204,12 +215,12 @@ export function useAnalysis() {
   }, [])
 
   const reset = useCallback(() => {
-    if (upload.previewUrl) {
-      URL.revokeObjectURL(upload.previewUrl)
+    for (const url of upload.previewUrls) {
+      URL.revokeObjectURL(url)
     }
     setUpload({
-      file: null,
-      previewUrl: null,
+      files: [],
+      previewUrls: [],
       isUploading: false,
       isWaitingForApi: false,
       progress: 0,
@@ -221,12 +232,12 @@ export function useAnalysis() {
       error: null,
     })
     setResult(null)
-  }, [upload.previewUrl])
+  }, [upload.previewUrls])
 
   return {
     upload,
     result,
-    handleFile,
+    handleFiles,
     startAnalysis,
     setDesignType,
     setWorkForm,

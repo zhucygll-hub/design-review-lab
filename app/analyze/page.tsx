@@ -16,7 +16,7 @@ export default function AnalyzePage() {
   const router = useRouter()
   const {
     upload,
-    handleFile,
+    handleFiles,
     startAnalysis,
     setDesignType,
     setWorkForm,
@@ -32,6 +32,8 @@ export default function AnalyzePage() {
         id: analysisResult.id,
         imageUrl: analysisResult.imageUrl,
         fileName: analysisResult.fileName,
+        imageUrls: analysisResult.imageUrls,
+        fileNames: analysisResult.fileNames,
         score: analysisResult.score,
         scoreNumeric: analysisResult.scoreNumeric,
         createdAt: analysisResult.createdAt,
@@ -47,6 +49,12 @@ export default function AnalyzePage() {
     }
   }
 
+  const hasFiles = upload.files.length > 0
+  const previewFiles = upload.previewUrls.map((url, i) => ({
+    url,
+    fileName: upload.files[i]?.name ?? '',
+  }))
+
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       {/* Header */}
@@ -55,10 +63,10 @@ export default function AnalyzePage() {
           <p className="report-kicker">提交评审材料</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[#F4EFE6]">作品评审</h1>
           <p className="mt-2 text-sm leading-6 text-[#F4EFE6]/48">
-            上传单张设计作品，补充评审背景后生成七维评分和导师意见。
+            上传 1-3 张设计作品图片，补充评审背景后生成七维评分和导师意见。
           </p>
         </div>
-        {upload.file && !upload.isUploading && (
+        {hasFiles && !upload.isUploading && (
           <Button variant="ghost" size="sm" onClick={reset}>
             重新上传
           </Button>
@@ -66,15 +74,15 @@ export default function AnalyzePage() {
       </div>
 
       {/* Upload zone */}
-      {!upload.file && <UploadZone onFile={handleFile} />}
+      {!hasFiles && <UploadZone onFiles={handleFiles} workForm={upload.workForm} />}
 
       {/* Image preview */}
-      {upload.previewUrl && upload.file && (
-        <ImagePreview url={upload.previewUrl} fileName={upload.file.name} />
+      {upload.previewUrls.length > 0 && (
+        <ImagePreview files={previewFiles} workForm={upload.workForm} />
       )}
 
       {/* Design type toggle */}
-      {upload.file && !upload.isUploading && (
+      {hasFiles && !upload.isUploading && (
         <div className="space-y-6">
           <DesignTypeToggle value={upload.designType} onChange={setDesignType} />
           <ScenarioSelector
@@ -116,7 +124,7 @@ export default function AnalyzePage() {
       )}
 
       {/* Start analysis button */}
-      {upload.file && !upload.isUploading && (
+      {hasFiles && !upload.isUploading && (
         <Button onClick={handleStartAnalysis} variant="primary" size="lg" className="w-full">
           开始 AI 分析
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

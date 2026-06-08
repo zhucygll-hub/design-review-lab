@@ -479,7 +479,8 @@ function buildSystemPrompt(
   designType: DesignType,
   workForm: WorkForm,
   _reviewPurpose: ReviewPurpose,
-  dimensions: DimensionScore[]
+  dimensions: DimensionScore[],
+  imageCount: number = 1
 ): string {
   const isConcept = designType === 'concept'
 
@@ -508,9 +509,16 @@ function buildSystemPrompt(
     ? `\n============================================================\n核心原则：只能评价图片可见证据\n============================================================\n\n你看到的是一张模型实物照片。你只能评价照片中实际可见的内容。\n\n禁止行为：\n- 禁止把"照片里看不到"当成"学生没做"来扣分\n- 禁止写"缺少用户调研"、"缺少概念推导"、"缺少问题定义"——这些内容在模型照片中不可能出现\n- 禁止编造用户画像、使用场景、目标人群——除非形态本身强烈暗示\n\n正确做法：\n- 不确定某信息时 → "从当前照片无法判断XX"\n- 评价聚焦于造型、比例、材质、工艺、展示质量等可见内容\n- 如需指出缺失信息 → "建议在作品集中补充XX视图/说明/过程照"\n`
     : ''
 
-  return `你是一个专业的设计评审 AI 导师团队。你需要从多个专业视角分析用户上传的单张设计作品图片。
+  return `你是一个专业的设计评审 AI 导师团队。你需要从多个专业视角分析用户上传的${imageCount === 1 ? '单张设计作品图片' : `${imageCount} 张同一件设计作品的补充视角图片（按上传顺序排列）`}。
 
-请严格按照以下 JSON 格式返回分析结果（不要包含 markdown 代码块标记）：
+${imageCount > 1 ? `多图评审指南：
+- 图1 通常是主视图或整体图，图2-3 是补充视角（侧面、细节、局部等）
+- 引用具体画面时标注图片编号，如"图1 整体展板中..."
+- 如果某条观察仅在某张图中可见，说明是哪张图
+- 不要假设各图属于不同作品——它们是同一件作品的不同角度或页面
+- 跨图判断时，描述各图之间的关系（如"图2 的细节处理与图1 的整体风格一致/不一致"）
+
+` : ''}请严格按照以下 JSON 格式返回分析结果（不要包含 markdown 代码块标记）：
 
 {
   "score": "S / A+ / A / B / C / D / E 中的一个",
@@ -562,6 +570,35 @@ ${redFlagRules}
 对以下维度逐一打分（0-100 整数），并写一句话评价。
 注意：scoreNumeric 随便填一个值即可，最终总分由外部程序根据各维度分数和权重重新计算。
 
+============================================================
+维度评分锚点（每个维度单独打分时参考，减少跨运行方差）：
+============================================================
+
+不要把维度评分视为连续值，请在以下断点中选择最接近的：
+
+90-100：卓越级 — 该维度在同龄作品中属于顶尖
+  90 = 有一个明确且优秀的亮点，经得起专业推敲
+  95 = 可独立展示给行业专家并获得认可
+
+80-89：优秀级 — 该维度可见扎实专业功底
+  80 = 达到校级课程作品上游水准，设计意识清楚
+  85 = 同级作品中让人印象深刻，执行扎实
+
+70-79：合格级 — 该维度已"做完"但缺乏明确设计决策
+  70 = 完成但平庸，设计意识不明显，仅满足基本要求
+  75 = 有处理意识但执行不够精准，方向对但力度不够
+
+60-69：挣扎级 — 该维度有明显缺陷，严重拖累整体
+0-59：未达标 — 该维度几乎无处理或完全错误
+
+打分原则：
+- 大多数设计学生作品的单维度分数应在 65-82 之间
+- 不确定给 70 还是 75 → 选 70（从严）
+- 不确定给 80 还是 85 → 选 80（从严）
+- 只有100%确信时给 85+
+- 给 90+ 时必须在 description 中写清楚具体画面依据
+- 维度评分是计算总分的基础，不是给你表达整体印象的渠道
+
 第4步：确定等级区间
 根据维度得分和短板数量，对照以下锚点确定作品属于哪个等级区间：
 
@@ -612,6 +649,18 @@ ${highScoreConstraints}
 - 你是来找茬的设计导师，虚假高分比低分更害人
 
 ============================================================
+跨运行一致性原则：
+============================================================
+
+如果连续两次评审同一作品，在以下条件不变时各维度分数不应有超过 5 分的波动：
+- 红牌数量和类型相同
+- 最强维度和最弱维度相同
+- 弱维度（<70分）的数量相同
+
+这意味着你应该给每个维度"它值多少分"而不是"这张图片整体感觉如何"。
+维度评分是计算总分的基础，不是给你表达整体印象的渠道。
+
+============================================================
 calibrationNote 填写指南：
 ============================================================
 
@@ -653,7 +702,8 @@ impact 取值: low / medium / high
 export function buildAnalysisPrompt(
   designType: DesignType = 'commercial',
   workForm: WorkForm = 'board',
-  reviewPurpose: ReviewPurpose = 'course'
+  reviewPurpose: ReviewPurpose = 'course',
+  imageCount: number = 1
 ): { system: string; user: string } {
   const isConcept = designType === 'concept'
   const scenario = buildScenarioSummary(designType, workForm, reviewPurpose)
@@ -668,7 +718,7 @@ export function buildAnalysisPrompt(
     )
     .join(',\n')
 
-  const system = buildSystemPrompt(designType, workForm, reviewPurpose, dimensions)
+  const system = buildSystemPrompt(designType, workForm, reviewPurpose, dimensions, imageCount)
 
   const scenarioInstruction = `【本次评审场景】
 ${scenario}
@@ -691,6 +741,10 @@ ${dimensionJson}
 
   if (isConcept) {
     user = '用户已将此作品标记为"概念设计"。请从概念设计的角度评估：关注思想深度、原创性、设计边界的探索，而非市场可行性或商业落地性。\n\n' + user
+  }
+
+  if (imageCount > 1) {
+    user += `\n\n你收到了 ${imageCount} 张同一作品的图片，按上传顺序排列。图1 是主视图，后续图片为补充视角。`
   }
 
   return {

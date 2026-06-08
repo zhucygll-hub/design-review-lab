@@ -160,6 +160,59 @@ export function getBoundaryProximity(finalScore: number): string | null {
 }
 
 // ============================================================
+// Stability zone — prevents boundary flips when dimensions are consistent
+// ============================================================
+
+const TIER_THRESHOLD_MAP: Record<string, number> = {
+  'S/A+': 93,
+  'A+/A': 88,
+  'A/B': 82,
+  'B/C': 74,
+  'C/D': 67,
+  'D/E': 60,
+}
+
+/**
+ * When a final score is within ±3 of a tier boundary, apply a conservative snap:
+ * - If the work doesn't have strong evidence (3+ dims ≥85, 0 weak dims, 0 red flags),
+ *   snap the score down to boundary-1 to prevent random promotion.
+ * - Truly excellent works are left alone.
+ *
+ * This reduces ±5-10pt variance from AI dimension scoring inconsistency
+ * without changing the scoring scale for unambiguous cases.
+ */
+function applyStabilityZone(
+  score: number,
+  dimensions: DimensionScore[],
+  redFlags: string[]
+): { score: number; applied: boolean } {
+  const proximity = getBoundaryProximity(score)
+  if (!proximity) return { score, applied: false }
+
+  const validScores = dimensions
+    .filter((d) => d.score !== null && d.score !== undefined)
+    .map((d) => d.score as number)
+
+  const strongDims = validScores.filter((s) => s >= 85).length
+  const weakDims = validScores.filter((s) => s < 70).length
+
+  // Only truly excellent works get the benefit of the doubt at boundaries
+  const deservesBenefit = strongDims >= 3 && weakDims === 0 && redFlags.length === 0
+
+  const threshold = TIER_THRESHOLD_MAP[proximity]
+  if (!threshold) return { score, applied: false }
+
+  if (score >= threshold && score - threshold <= 3) {
+    // Above a boundary but within the danger zone: snap down unless truly excellent
+    if (!deservesBenefit) {
+      return { score: threshold - 1, applied: true }
+    }
+  }
+
+  return { score, applied: false }
+}
+
+// ============================================================
 // Red flag cap rules
 // ============================================================
 
@@ -283,7 +336,9 @@ export interface NormalizeResult {
     recalculatedScore: number
     afterRedFlagCap: number
     afterCalibration: number
+    afterStabilityZone: number
     wasCalibrated: boolean
+    wasStabilityApplied: boolean
     finalTier: NewScore
   }
 }
@@ -330,8 +385,12 @@ export function normalizeAnalysisResult(
   const afterCalibration = highScoreCalibration(afterRedFlagCap, clampedDimensions, raw.redFlags ?? [])
   const wasCalibrated = afterCalibration !== afterRedFlagCap
 
+  // --- Step 4.5: Apply stability zone ---
+  const { score: afterStabilityZone, applied: wasStabilityApplied } =
+    applyStabilityZone(afterCalibration, clampedDimensions, raw.redFlags ?? [])
+
   // --- Step 5: Derive tier ---
-  const finalTier = numericToScore(afterCalibration)
+  const finalTier = numericToScore(afterStabilityZone)
 
   // --- Step 6: Fix scoreLabel ---
   const finalLabel = getScoreLabel(finalTier)
@@ -341,7 +400,7 @@ export function normalizeAnalysisResult(
     ...raw,
     dimensions: clampedDimensions,
     score: finalTier,
-    scoreNumeric: afterCalibration,
+    scoreNumeric: afterStabilityZone,
     scoreLabel: finalLabel,
     redFlags: raw.redFlags ?? [],
     calibrationNote: raw.calibrationNote,
@@ -354,7 +413,9 @@ export function normalizeAnalysisResult(
     recalculatedScore,
     afterRedFlagCap,
     afterCalibration,
+    afterStabilityZone,
     wasCalibrated,
+    wasStabilityApplied,
     finalTier,
   }
 
@@ -372,8 +433,11 @@ export function normalizeAnalysisResult(
     if (wasCalibrated) {
       console.log('  After highScore calibration:', afterCalibration, '(was', afterRedFlagCap, ')')
     }
-    console.log('  Final tier:', finalTier, '| Final numeric:', afterCalibration)
-    console.log('  Deviation (AI vs final):', aiRawScore - afterCalibration > 0 ? '+' + (aiRawScore - afterCalibration) : aiRawScore - afterCalibration)
+    if (wasStabilityApplied) {
+      console.log('  After stability zone:', afterStabilityZone, '(was', afterCalibration, '- boundary snap)')
+    }
+    console.log('  Final tier:', finalTier, '| Final numeric:', afterStabilityZone)
+    console.log('  Deviation (AI vs final):', aiRawScore - afterStabilityZone > 0 ? '+' + (aiRawScore - afterStabilityZone) : aiRawScore - afterStabilityZone)
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   }
 

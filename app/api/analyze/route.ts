@@ -89,36 +89,46 @@ export async function POST(request: NextRequest) {
   try {
     console.log(`[analyze:${requestId}] Reading form data`)
     const formData = await request.formData()
-    const file = formData.get('file') as File | null
     const designType = parseDesignType(formData.get('designType'))
     const workForm = parseWorkForm(formData.get('workForm'))
     const reviewPurpose = parseReviewPurpose(formData.get('reviewPurpose'))
 
-    if (!file) {
+    // Accept multiple files (1-3 images for single work)
+    const files = formData.getAll('files') as File[]
+    if (files.length === 0) {
       return NextResponse.json({ error: '未收到文件', requestId }, { status: 400 })
     }
 
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
-      return NextResponse.json(
-        { error: '作品评审仅支持 JPG 或 PNG 图片', requestId },
-        { status: 400 }
-      )
+    // Validate each file
+    for (const file of files) {
+      if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        return NextResponse.json(
+          { error: '作品评审仅支持 JPG 或 PNG 图片', requestId },
+          { status: 400 }
+        )
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        return NextResponse.json(
+          { error: '压缩后的图片仍超过 5MB，请缩小图片尺寸后重试', requestId },
+          { status: 413 }
+        )
+      }
     }
 
-    if (file.size > MAX_IMAGE_BYTES) {
-      return NextResponse.json(
-        { error: '压缩后的图片仍超过 5MB，请缩小图片尺寸后重试', requestId },
-        { status: 413 }
-      )
-    }
+    // Build data URIs for all images
+    const dataUris = await Promise.all(
+      files.map(async (file) => {
+        const bytes = new Uint8Array(await file.arrayBuffer())
+        return arrayBufferToDataUri(bytes, file.type)
+      })
+    )
 
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const dataUri = arrayBufferToDataUri(bytes, file.type)
-    const { system, user } = buildAnalysisPrompt(designType, workForm, reviewPurpose)
+    const imageCount = dataUris.length
+    const { system, user } = buildAnalysisPrompt(designType, workForm, reviewPurpose, imageCount)
     const weightTable = buildSingleWorkWeightTable(designType, workForm, reviewPurpose)
 
     console.log(
-      `[analyze:${requestId}] Calling Doubao, file=${file.name}, bytes=${file.size}, type=${designType}, form=${workForm}, purpose=${reviewPurpose}`
+      `[analyze:${requestId}] Calling Doubao, files=${files.length}, fileNames=${files.map(f => f.name).join(',')}, totalBytes=${files.reduce((s, f) => s + f.size, 0)}, type=${designType}, form=${workForm}, purpose=${reviewPurpose}`
     )
 
     const requiredDimensions = buildSingleWorkWeightTable(designType, workForm, reviewPurpose)
@@ -126,10 +136,17 @@ export async function POST(request: NextRequest) {
     let lastFormatError = 'AI 返回的评审核心格式不完整，请重试'
 
     for (let attempt = 1; attempt <= 2; attempt++) {
+      const imageLabel = imageCount === 1 ? '图片' : `${imageCount} 张图片`
       const retryInstruction =
         attempt === 1
           ? ''
-          : `\n\n上一次返回格式不完整。请重新分析同一张图片，只返回一个 JSON 对象；dimensions 必须完整包含以下 ${Object.keys(requiredDimensions).length} 个维度，且每个 score 必须是 0-100 的整数：${Object.keys(requiredDimensions).join('、')}。`
+          : `\n\n上一次返回格式不完整。请重新分析同一${imageLabel}，只返回一个 JSON 对象；dimensions 必须完整包含以下 ${Object.keys(requiredDimensions).length} 个维度，且每个 score 必须是 0-100 的整数：${Object.keys(requiredDimensions).join('、')}。`
+
+      // Build user message content with multiple image_url blocks
+      const imageBlocks = dataUris.map((uri) => ({
+        type: 'image_url' as const,
+        image_url: { url: uri, detail: 'low' as const },
+      }))
 
       const response = await fetchArkWithRetry(
         `${ARK_BASE_URL}/chat/completions`,
@@ -146,7 +163,7 @@ export async function POST(request: NextRequest) {
               {
                 role: 'user',
                 content: [
-                  { type: 'image_url', image_url: { url: dataUri, detail: 'low' } },
+                  ...imageBlocks,
                   { type: 'text', text: user + retryInstruction },
                 ],
               },
@@ -221,7 +238,7 @@ export async function POST(request: NextRequest) {
     rawResult.workForm = workForm
     rawResult.reviewPurpose = reviewPurpose
     rawResult.imageUrl = ''
-    rawResult.fileName = file.name
+    rawResult.fileName = files[0].name
     rawResult.scoreNumeric = rawResult.scoreNumeric ?? 0
     rawResult.score = rawResult.score ?? numericToScore(rawResult.scoreNumeric)
     rawResult.scoreLabel = rawResult.scoreLabel ?? getScoreLabel(rawResult.score)
@@ -232,12 +249,10 @@ export async function POST(request: NextRequest) {
       designType,
       workForm,
       reviewPurpose,
-      seedKey: `${requestId}:${file.name}:${file.size}`,
+      seedKey: `${requestId}:${files[0].name}:${files[0].size}`,
     })
 
     // ── Mentor review quality control ──
-    // AI is now asked to generate mentorReviews with visual evidence.
-    // Validate them; fall back to templates if quality is insufficient.
     const aiReviews = rawResult.mentorReviews
     if (aiReviews && aiReviews.length === 4) {
       const qualityCheck = shouldUseAIReviews(aiReviews)
@@ -266,8 +281,7 @@ export async function POST(request: NextRequest) {
       rawResult.mentorReviews = generatedFeedback.mentorReviews
     }
 
-    // pros/cons/suggestions/calibrationNote: prefer AI, fall back to template
-    // ── Also validate AI-generated pros/cons/suggestions for concreteness ──
+    // pros/cons/suggestions: prefer AI, fall back to template
     const aiPros = rawResult.pros
     const aiCons = rawResult.cons
     const aiSuggestions = rawResult.suggestions
@@ -313,10 +327,18 @@ export async function POST(request: NextRequest) {
       redFlagCount: debugInfo.aiRawRedFlags.length,
       wasRedFlagCapped: debugInfo.afterRedFlagCap !== debugInfo.recalculatedScore,
       wasHighScoreCalibrated: debugInfo.wasCalibrated,
-      boundaryProximity: getBoundaryProximity(debugInfo.afterCalibration),
+      boundaryProximity: getBoundaryProximity(debugInfo.afterStabilityZone),
+      stabilityZoneApplied: debugInfo.wasStabilityApplied,
     }
+
+    // Build multi-image fields
+    if (files.length > 1) {
+      result.imageUrls = dataUris // base64 data URIs for preview (client-side overrides with blob URLs)
+      result.fileNames = files.map((f) => f.name)
+    }
+
     console.log(
-      `[analyze:${requestId}] Success, tier=${result.score}, elapsed=${Date.now() - startedAt}ms`
+      `[analyze:${requestId}] Success, tier=${result.score}, images=${files.length}, elapsed=${Date.now() - startedAt}ms`
     )
 
     return NextResponse.json(result)

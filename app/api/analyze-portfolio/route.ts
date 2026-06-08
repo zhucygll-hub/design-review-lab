@@ -427,7 +427,8 @@ export async function POST(request: NextRequest) {
       redFlagCount: debugInfo.aiRawRedFlags.length,
       wasRedFlagCapped: debugInfo.afterRedFlagCap !== debugInfo.recalculatedScore,
       wasHighScoreCalibrated: debugInfo.wasCalibrated,
-      boundaryProximity: getBoundaryProximity(debugInfo.afterCalibration),
+      boundaryProximity: getBoundaryProximity(debugInfo.afterStabilityZone),
+      stabilityZoneApplied: debugInfo.wasStabilityApplied,
     }
 
     console.log(

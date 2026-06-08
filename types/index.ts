@@ -49,6 +49,7 @@ export interface ScoreBreakdown {
   wasRedFlagCapped: boolean      // 是否因红牌被封顶
   wasHighScoreCalibrated: boolean // 是否触发高分校准
   boundaryProximity: string | null // 若最终分在档位边界 ±3 内，描述该边界（如 "C/D"），否则 null
+  stabilityZoneApplied?: boolean  // 是否触发了稳定性区域校准（保守判定）
 }
 
 export interface PortfolioReviewScope {
@@ -63,6 +64,10 @@ export interface AnalysisResult {
   id: string
   imageUrl: string
   fileName: string
+  /** All uploaded image URLs (populated when >1 image was uploaded) */
+  imageUrls?: string[]
+  /** All uploaded file names (populated when >1 file was uploaded) */
+  fileNames?: string[]
   score: NewScore
   scoreNumeric: number
   scoreLabel: string
@@ -97,6 +102,10 @@ export interface HistoryItem {
   id: string
   imageUrl: string
   fileName: string
+  /** All uploaded image URLs (populated when >1 image was uploaded) */
+  imageUrls?: string[]
+  /** All uploaded file names (populated when >1 file was uploaded) */
+  fileNames?: string[]
   score: Score // legacy union for backward compat
   scoreNumeric: number
   mode: AnalysisMode

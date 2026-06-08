@@ -110,7 +110,9 @@ export default function ScoreEvidence({ result }: ScoreEvidenceProps) {
             该分数接近 {breakdown.boundaryProximity} 等级边界
           </p>
           <p className="mt-2 text-xs leading-5 text-[#F4EFE6]/44">
-            类似作品在不同评审中可能落在相邻档位。建议重点看具体短板和修改建议，不要只看字母等级。
+            {breakdown.stabilityZoneApplied
+              ? '已自动进行稳定性校准。当前作品在各项指标上没有足够证据支撑更高档位，因此做了保守判定。建议重点看具体短板和修改建议，不要只看字母等级。'
+              : '类似作品在不同评审中可能落在相邻档位。建议重点看具体短板和修改建议，不要只看字母等级。'}
           </p>
         </div>
       )}
