@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import ScoreBadge from '@/components/result/ScoreBadge'
 import ScoreEvidence from '@/components/result/ScoreEvidence'
 import ResultInsightPanel from '@/components/result/ResultInsightPanel'
-import RadarChart from '@/components/result/RadarChart'
+import DimensionSummary from '@/components/result/DimensionSummary'
 import MentorReview from '@/components/result/MentorReview'
 import ProsConsSection from '@/components/result/ProsConsSection'
 import SuggestionsSection from '@/components/result/SuggestionsSection'
@@ -67,7 +67,7 @@ export default function ResultPage() {
               {result.fileName}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F4EFE6]/48">
-              先看最大问题和优先修改项，再查看完整维度、导师点评和评分依据。
+              先看 3 个关键问题和优先修改项，再查看完整维度、导师点评和评分依据。
             </p>
           </div>
           <ExportButton />
@@ -123,47 +123,7 @@ export default function ResultPage() {
 
       <ResultInsightPanel result={result} />
 
-      <section className="report-panel p-6">
-        <h2 className="report-title text-lg mb-1">维度分析</h2>
-        <p className="mb-6 text-sm text-[#F4EFE6]/45">
-          雷达图用于观察优势与短板分布，具体怎么改请优先看上方导读和修改路线。
-        </p>
-        <RadarChart dimensions={result.dimensions} />
-
-        <div className="mt-6 space-y-2">
-          {result.dimensions.map((dim) => {
-            const isNA = dim.score === null
-            return (
-              <div
-                key={dim.name}
-                className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#F4EFE6]/4 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{
-                      backgroundColor: isNA
-                        ? '#6B7280'
-                        : dim.score! >= 85
-                          ? '#7EB98E'
-                          : dim.score! >= 70
-                            ? '#6B9CFF'
-                            : '#D6A85A',
-                    }}
-                  />
-                  <span className={`text-sm ${isNA ? 'text-[#F4EFE6]/30' : 'text-[#F4EFE6]/68'}`}>
-                    {dim.name}
-                  </span>
-                </div>
-                <span className="text-sm font-mono text-[#F4EFE6]/46">
-                  {isNA ? 'N/A' : dim.score}
-                  {dim.weight && <span className="text-[#F4EFE6]/22 ml-1">({dim.weight}%)</span>}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </section>
+      <DimensionSummary dimensions={result.dimensions} />
 
       {result.mode === 'portfolio' && (result.targetCompany || result.targetRole) && (
         <section className="report-panel p-6">
